@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { compileSpecStream, type Spec } from "@json-render/core";
-import { defineRegistry, Renderer } from "@json-render/react";
+import { defineRegistry, JSONUIProvider, Renderer } from "@json-render/react";
 import { Streamdown } from "streamdown";
 import { catalog } from "@catalog";
 
@@ -39,8 +39,12 @@ function readSpec(): Spec {
   } as Spec;
 }
 
+const spec = readSpec();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Renderer spec={readSpec()} registry={registry} />
+    <JSONUIProvider registry={registry} initialState={spec.state ?? {}}>
+      <Renderer spec={spec} registry={registry} />
+    </JSONUIProvider>
   </StrictMode>,
 );

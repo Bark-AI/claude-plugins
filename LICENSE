@@ -1,21 +1,29 @@
-MIT License
+Copyright © 2026 Bark A.I. LTD ("Bark AI"). All rights reserved.
 
-Copyright (c) 2026 Bark AI
+This repository and its contents (the "Materials") are made publicly available
+by Bark AI solely to enable Bark AI's customers to install and use Bark AI's
+plugins with Claude.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Grant. Subject to the restrictions below, Bark AI grants you a limited,
+non-exclusive, non-transferable, revocable license to download and use the
+Materials only as necessary to install and run the Bark AI plugins with Claude
+in connection with your own authorized Bark AI account.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Restrictions. Except as expressly permitted above, you may not copy, modify,
+adapt, translate, publish, distribute, sublicense, sell, or create derivative
+works from the Materials, in whole or in part, and you may not use the
+Materials to develop or offer a competing product or service. All rights not
+expressly granted are reserved by Bark AI.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Trademarks. This license grants no rights to use the "Bark," "Bark AI," or any
+related names, logos, or trademarks, except as required for the reasonable and
+customary description of the plugins' origin.
+
+No warranty. THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO
+EVENT SHALL BARK AI BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR
+IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+
+For any use beyond what is described above, contact Bark AI at https://bark-ai.com.

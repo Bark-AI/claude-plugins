@@ -1,23 +1,15 @@
 #!/usr/bin/env node
-// Inject a dashboard spec into the template and write the result to the working dir.
+// Inject a dashboard spec (JSONL patch stream) into the bundled template and write it to the
+// working dir. Dumb inline — the spec file's contents replace __DASHBOARD_SPEC__; the renderer
+// (json-render's compileSpecStream) parses the JSONL into a spec at load.
 //
-// Usage:
-//   node build.mjs <spec.json> [output.html]
-//
-// - <spec.json>  path to the dashboard spec (JSON). Must include "storeName";
-//                "boardLabel" is optional (defaults to "Dashboard").
-// - [output.html] output path (default: ./dashboard.html in the current working dir).
-//
-// The template ships in the sibling ../templates/dashboard.template.html and contains the
-// token __DASHBOARD_SPEC__, which is replaced with the spec JSON.
+// Usage: node build.mjs <spec.jsonl> [output.html]   (output defaults to ./dashboard.html)
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-// Template lives in the sibling templates/ dir (this script is in scripts/).
-const TEMPLATE = join(SCRIPT_DIR, "..", "templates", "dashboard.template.html");
+const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), "..", "templates", "dashboard.template.html");
 const PLACEHOLDER = "__DASHBOARD_SPEC__";
 
 function fail(msg) {
@@ -26,35 +18,26 @@ function fail(msg) {
 }
 
 const [specArg, outArg] = process.argv.slice(2);
-if (!specArg) fail("Usage: node build.mjs <spec.json> [output.html]");
+if (!specArg) fail("Usage: node build.mjs <spec.jsonl> [output.html]");
 
-// Read + validate the spec.
-let spec;
+let spec, template;
 try {
-  spec = JSON.parse(readFileSync(resolve(specArg), "utf8"));
+  spec = readFileSync(resolve(specArg), "utf8");
 } catch (e) {
-  fail(`could not read/parse spec "${specArg}": ${e.message}`);
+  fail(`could not read spec "${specArg}": ${e.message}`);
 }
-if (!spec || typeof spec !== "object") fail("spec must be a JSON object.");
-if (!spec.storeName) fail('spec must include a "storeName".');
-if (!spec.boardLabel) spec.boardLabel = "Dashboard";
-
-// Read the template.
-let template;
 try {
   template = readFileSync(TEMPLATE, "utf8");
 } catch (e) {
   fail(`could not read template at ${TEMPLATE}: ${e.message}`);
 }
-const occurrences = template.split(PLACEHOLDER).length - 1;
-if (occurrences === 0) fail(`template is missing the ${PLACEHOLDER} placeholder.`);
-if (occurrences > 1) fail(`template has ${occurrences} ${PLACEHOLDER} placeholders; expected exactly one.`);
+if (!template.includes(PLACEHOLDER)) fail(`template is missing the ${PLACEHOLDER} placeholder.`);
 
-// Embed the spec as JSON, escaping "<" so a value can't break out of the <script> tag.
-const specJson = JSON.stringify(spec).replace(/</g, "\\u003c");
-const html = template.replace(PLACEHOLDER, specJson);
+// Escape "<" so a value can't break out of the <script> tag (json-render restores it on parse).
+// Function replacement avoids "$" in the spec being treated as a replacement pattern.
+const embedded = spec.replace(/</g, "\\u003c");
+const html = template.replace(PLACEHOLDER, () => embedded);
 
-// Write to the working dir.
 const outPath = resolve(outArg ?? "dashboard.html");
 try {
   writeFileSync(outPath, html, "utf8");
@@ -62,4 +45,4 @@ try {
   fail(`could not write output to ${outPath}: ${e.message}`);
 }
 
-console.log(`Wrote ${outPath} (store: ${spec.storeName}, board: ${spec.boardLabel})`);
+console.log(`Wrote ${outPath}`);

@@ -33,8 +33,10 @@ design-dashboard/
     └── dashboard.template.html     # branded template with a __DASHBOARD_SPEC__ slot
 ```
 
-Refer to them by absolute path via `${CLAUDE_PLUGIN_ROOT}`, e.g.
-`${CLAUDE_PLUGIN_ROOT}/skills/design-dashboard/scripts/build.mjs`.
+`${CLAUDE_PLUGIN_ROOT}` points at the plugin, but be aware it's a **host** path that often does
+**not** exist inside the bash sandbox — in Cowork the plugin is mounted under
+`/sessions/*/mnt/.remote-plugins/*/`. So don't hardcode `${CLAUDE_PLUGIN_ROOT}` in a bash command;
+resolve the script path first (see step 2).
 
 ## Steps
 
@@ -44,13 +46,18 @@ Refer to them by absolute path via `${CLAUDE_PLUGIN_ROOT}`, e.g.
    ```
    `storeName` is required; `boardLabel` is optional (defaults to "Dashboard"). See
    `spec.example.json` for reference.
-2. **Build the dashboard.** Run the script — it reads the spec, injects it into the template, and
+2. **Build the dashboard.** First resolve the script path (the `${CLAUDE_PLUGIN_ROOT}` host path may
+   not exist in the bash sandbox), then run it — it reads the spec, injects it into the template, and
    writes the finished HTML to the working folder:
+   ```bash
+   BUILD="${CLAUDE_PLUGIN_ROOT:-}/skills/design-dashboard/scripts/build.mjs"
+   [ -f "$BUILD" ] || BUILD="$(find /sessions ~/.claude -path '*/skills/design-dashboard/scripts/build.mjs' -print -quit 2>/dev/null)"
+   node "$BUILD" spec.json dashboard.html
    ```
-   node ${CLAUDE_PLUGIN_ROOT}/skills/design-dashboard/scripts/build.mjs spec.json dashboard.html
-   ```
-   (The second arg is the output path; it defaults to `./dashboard.html`.) **Never edit the bundled
-   template in place** — the build always writes a fresh copy to the working dir.
+   The scoped `find … -print -quit` stops at the first match — don't `find /` (scanning the whole
+   disk prints permission-denied noise and returns a **misleading exit 1** even when the file is
+   found). The second arg is the output path (defaults to `./dashboard.html`). **Never edit the
+   bundled template in place** — the build always writes a fresh copy to the working dir.
 3. **Publish as a live artifact.** Call `create_artifact` pointing at the built `dashboard.html`.
    - **Name:** `Bark · <Board> — <Store>` (store name at the end) — e.g. "Bark · P&L — Acme Hats".
    - **id:** a stable kebab-case slug of the board then the store, `&` → `n`/`and`, e.g.

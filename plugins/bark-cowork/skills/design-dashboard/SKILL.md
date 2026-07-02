@@ -1,34 +1,57 @@
 ---
 name: design-dashboard
-description: Build a branded, live Bark dashboard in Claude Cowork. Use when the user asks to build, create, make, or set up a Bark dashboard or board for their store — copies the bundled HTML template, sets the header, and publishes it as a live artifact.
+description: Build a branded, live Bark dashboard in Claude Cowork. Use when the user asks to build, create, make, or set up a Bark dashboard or board for their store — writes a small spec, injects it into the bundled template with the build script, and publishes the result as a live artifact.
 ---
 
 # Design a Bark dashboard (Cowork live artifact)
 
-Build a branded Bark dashboard by **copying the bundled HTML template** and publishing it as a Cowork
-live artifact. This is the placeholder/MVP flow — copy the template, set the header, publish. (The
-data-driven catalog + spec renderer comes later; for now the template is the whole board.)
+Build a branded Bark dashboard by writing a small **spec** (JSON), injecting it into the bundled HTML
+template with the build script, and publishing the result as a Cowork live artifact. This is the
+placeholder/MVP flow — the spec currently just carries the store name and board label; the
+data-driven catalog comes later.
 
 ## When this applies
 
 Only when the user asks to **build / create / make / set up a Bark dashboard** (a board / live view)
 for their store. A question about the business is not a dashboard request — answer that directly.
 
-## Prerequisite: confirm you're in Cowork
+## Prerequisites
 
-This skill needs Cowork's live-artifact tools. Check that `create_artifact` is available before
-starting; if it isn't, say the dashboard builder only works in a Claude Cowork session and stop.
+- **Cowork:** this skill needs Cowork's live-artifact tools. Check that `create_artifact` is
+  available before starting; if it isn't, say the dashboard builder only works in a Claude Cowork
+  session and stop.
+- **Node:** the build script runs with Node (`node`). It ships with this skill — no install needed.
+
+## Files bundled with this skill
+
+```
+design-dashboard/
+├── scripts/
+│   └── build.mjs                   # injects a spec into the template → working dir
+├── spec.example.json               # example spec ({ storeName, boardLabel })
+└── templates/
+    └── dashboard.template.html     # branded template with a __DASHBOARD_SPEC__ slot
+```
+
+Refer to them by absolute path via `${CLAUDE_PLUGIN_ROOT}`, e.g.
+`${CLAUDE_PLUGIN_ROOT}/skills/design-dashboard/scripts/build.mjs`.
 
 ## Steps
 
-1. **Copy the template into the working folder.** The template ships with this skill at
-   `${CLAUDE_PLUGIN_ROOT}/skills/design-dashboard/templates/dashboard.html`. Copy it into the working
-   directory as a new file (e.g. `dashboard.html`) — **do not edit it in place inside the plugin.**
-2. **Set the header text.** In the copied file, replace the two placeholders:
-   - `{{STORE_NAME}}` → the store's official name (e.g. "Acme Hats").
-   - `{{BOARD_LABEL}}` → a short board label (e.g. "Profit & Loss", "Category Analysis").
-   Leave the rest of the file as-is for now.
-3. **Publish as a live artifact.** Call `create_artifact` pointing at the copied file.
+1. **Write the spec** to a file in the working folder (e.g. `spec.json`). Minimum shape:
+   ```json
+   { "storeName": "Acme Hats", "boardLabel": "Profit & Loss" }
+   ```
+   `storeName` is required; `boardLabel` is optional (defaults to "Dashboard"). See
+   `spec.example.json` for reference.
+2. **Build the dashboard.** Run the script — it reads the spec, injects it into the template, and
+   writes the finished HTML to the working folder:
+   ```
+   node ${CLAUDE_PLUGIN_ROOT}/skills/design-dashboard/scripts/build.mjs spec.json dashboard.html
+   ```
+   (The second arg is the output path; it defaults to `./dashboard.html`.) **Never edit the bundled
+   template in place** — the build always writes a fresh copy to the working dir.
+3. **Publish as a live artifact.** Call `create_artifact` pointing at the built `dashboard.html`.
    - **Name:** `Bark · <Board> — <Store>` (store name at the end) — e.g. "Bark · P&L — Acme Hats".
    - **id:** a stable kebab-case slug of the board then the store, `&` → `n`/`and`, e.g.
      `profit-loss-acme-hats`. Reuse the same id when updating an existing board.
@@ -36,11 +59,15 @@ starting; if it isn't, say the dashboard builder only works in a Claude Cowork s
 
 ## To modify an existing board
 
-Find the artifact by its stable id, copy/read that file, edit it, and `update_artifact` with the
-**same id** — don't spawn a new one.
+The built HTML embeds the spec in a `<script id="dashboard-spec">` block. To change a board:
+
+1. Find the artifact by its stable id and read its HTML.
+2. Edit the **spec** — either update `spec.json` and re-run `build.mjs`, or edit the embedded spec
+   JSON directly.
+3. `update_artifact` with the **same id** — don't spawn a new one.
 
 ## Notes
 
-- Keep the plugin's template file pristine — always work on the copy.
-- This is a starting point: the template is a branded shell. Richer, data-bound dashboards are added
-  by extending the template, not by regenerating HTML per request.
+- Keep the bundled template and script pristine — always work on the built copy in the working dir.
+- This is a starting point: the template is a branded shell rendered from the spec. Richer,
+  data-bound dashboards come from growing the spec + template, not from regenerating HTML per request.

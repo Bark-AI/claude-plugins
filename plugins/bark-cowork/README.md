@@ -12,23 +12,28 @@ branded live artifact you can reopen and refresh.
 ```
 bark-cowork/
 ├── .claude-plugin/
-│   └── plugin.json                     # plugin manifest
-├── .mcp.json                           # Bark AI MCP connector (auto-registers on install)
+│   └── plugin.json                          # plugin manifest
+├── .mcp.json                                # Bark AI MCP connector (auto-registers on install)
 └── skills/
     └── design-dashboard/
-        ├── SKILL.md                    # build / modify / publish workflow
+        ├── SKILL.md                         # build / modify / publish workflow
+        ├── scripts/
+        │   └── build.mjs                    # injects a spec into the template → working dir
+        ├── spec.example.json                # example spec ({ storeName, boardLabel })
         └── templates/
-            └── dashboard.html          # branded dashboard template (copied per board)
+            └── dashboard.template.html      # branded template with a spec slot
 ```
 
 ## How it works (MVP)
 
-`design-dashboard` copies the bundled `templates/dashboard.html` into the working folder, sets the
-header (store name + board label), and publishes it as a live artifact via `create_artifact`. Modify
-an existing board by editing its file and calling `update_artifact` with the same id.
+`design-dashboard` writes a small **spec** (JSON — currently just the store name and board label),
+runs `scripts/build.mjs` to inject the spec into `templates/dashboard.template.html`, and writes the
+finished HTML into the working folder. It then publishes that file as a live artifact via
+`create_artifact`. The built HTML embeds the spec in a `<script id="dashboard-spec">` block; modify a
+board by editing the spec, rebuilding, and calling `update_artifact` with the same id.
 
-The template is currently a branded shell; data-bound blocks (KPIs, charts, tables) are added by
-extending the template, not by regenerating HTML per request.
+The template is currently a branded shell rendered from the spec; data-bound blocks (KPIs, charts,
+tables) come from growing the spec + template, not from regenerating HTML per request.
 
 ## Install
 

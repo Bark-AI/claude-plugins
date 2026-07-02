@@ -63,8 +63,8 @@
         <span class="wordmark">Bark</span><span class="spark">&#10033;</span>
         <span class="divider"></span>
         <div>
-          <div class="store">{{STORE_NAME}}</div>
-          <div class="board">{{BOARD_LABEL}}</div>
+          <div class="store" id="store-name"></div>
+          <div class="board" id="board-label"></div>
         </div>
       </div>
       <div class="updated">Data updated &mdash;</div>
@@ -72,10 +72,27 @@
 
     <div class="section-label">Dashboard</div>
     <div class="placeholder">
-      <strong>{{BOARD_LABEL}} for {{STORE_NAME}}.</strong><br />
+      <strong id="board-title"></strong><br />
       This is the branded Bark dashboard template. Data-bound blocks (KPIs, charts, tables) go here in
-      the next iteration &mdash; for now this is the starting shell.
+      the next iteration &mdash; for now this is the starting shell, rendered from the injected spec.
     </div>
   </div>
+
+  <!-- build.mjs replaces the spec placeholder below with the spec JSON. -->
+  <script type="application/json" id="dashboard-spec">__DASHBOARD_SPEC__</script>
+  <script>
+    (function () {
+      var spec = {};
+      try {
+        spec = JSON.parse(document.getElementById("dashboard-spec").textContent || "{}");
+      } catch (e) { /* keep defaults on bad/empty spec */ }
+      var store = spec.storeName || "Your store";
+      var board = spec.boardLabel || "Dashboard";
+      document.getElementById("store-name").textContent = store;
+      document.getElementById("board-label").textContent = board;
+      document.getElementById("board-title").textContent = board + " for " + store + ".";
+      document.title = "Bark · " + board + " — " + store;
+    })();
+  </script>
 </body>
 </html>

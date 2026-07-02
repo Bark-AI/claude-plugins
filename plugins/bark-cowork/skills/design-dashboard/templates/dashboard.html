@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bark Dashboard</title>
+  <style>
+    :root {
+      --page: #FFFFFF;
+      --block: #F7F6F3;
+      --ink: #1A1714;
+      --ink-soft: #6B635B;
+      --hairline: #EAE7E1;
+      --accent: #AD1A72;
+      --accent-tint: #F0E9EE;
+      --up: #2F6E4F;
+      --down: #C0392B;
+      --indigo: #252751;
+      --spark: #EA43E2;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 32px 64px; }
+
+    /* Header */
+    .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+    .lockup { display: flex; align-items: center; }
+    .wordmark { font-size: 26px; font-weight: 700; color: var(--indigo); letter-spacing: -0.01em; }
+    .spark { font-size: 16px; color: var(--spark); margin-left: 4px; line-height: 1; }
+    .divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 14px; }
+    .store { font-size: 16px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+    .board { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+    .updated { font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+
+    /* Placeholder body */
+    .section-label {
+      margin: 40px 0 12px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .placeholder {
+      background: var(--block);
+      border-radius: 12px;
+      padding: 40px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .placeholder strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <div class="lockup">
+        <span class="wordmark">Bark</span><span class="spark">&#10033;</span>
+        <span class="divider"></span>
+        <div>
+          <div class="store">{{STORE_NAME}}</div>
+          <div class="board">{{BOARD_LABEL}}</div>
+        </div>
+      </div>
+      <div class="updated">Data updated &mdash;</div>
+    </header>
+
+    <div class="section-label">Dashboard</div>
+    <div class="placeholder">
+      <strong>{{BOARD_LABEL}} for {{STORE_NAME}}.</strong><br />
+      This is the branded Bark dashboard template. Data-bound blocks (KPIs, charts, tables) go here in
+      the next iteration &mdash; for now this is the starting shell.
+    </div>
+  </div>
+</body>
+</html>

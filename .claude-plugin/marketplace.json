@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Plugins that help Bark AI users get more out of Bark inside Claude Web and Claude Cowork.",
-    "version": "0.0.1"
+    "version": "0.0.2"
   },
   "plugins": [
     {

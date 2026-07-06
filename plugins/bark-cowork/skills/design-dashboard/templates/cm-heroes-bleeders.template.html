@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bark · Heroes &amp; Bleeders</title>
+    <script type="application/json" id="bark-dashboard-config">
+        {
+            "boardName": "Heroes & Bleeders",
+            "storeId": 0,
+            "storeName": "Acme Hats",
+            "currencyCode": "USD",
+            "timezone": "America/New_York",
+            "tools": {
+                "startSession": "",
+                "executeQuery": ""
+            }
+        }
+    </script>
+    <style>
+        :root {
+            color-scheme: light;
+            --page: #FFFFFF;
+            --block: #F7F6F3;
+            --ink: #1A1714;
+            --ink-soft: #6B635B;
+            --hair: #EAE7E1;
+            --accent: #AD1A72;
+            --accent-tint: #F0E9EE;
+            --up: #2F6E4F;
+            --down: #C0392B;
+            --indigo: #252751;
+            --spark: #EA43E2;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--page);
+            color: var(--ink);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 32px 64px
+        }
+
+        .num {
+            font-variant-numeric: tabular-nums
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--hair)
+        }
+
+        .lockup {
+            display: flex;
+            align-items: center;
+            gap: 0
+        }
+
+        .wordmark {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--indigo);
+            letter-spacing: -.01em
+        }
+
+        .spark {
+            font-size: 16px;
+            color: var(--spark);
+            margin-left: 4px;
+            align-self: flex-start;
+            line-height: 1
+        }
+
+        .divider {
+            width: 1px;
+            height: 22px;
+            background: var(--hair);
+            margin: 0 14px
+        }
+
+        .store {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink)
+        }
+
+        .board {
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-top: 1px
+        }
+
+        .stamp {
+            font-size: 13px;
+            color: var(--ink-soft);
+            white-space: nowrap;
+            text-align: right
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 22px;
+            flex-wrap: wrap;
+            margin: 18px 0 4px
+        }
+
+        .ctrl {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .ctrl label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        select {
+            font-family: var(--sans);
+            font-size: 13px;
+            color: var(--ink);
+            background: var(--page);
+            border: 1px solid var(--hair);
+            border-radius: 8px;
+            padding: 7px 30px 7px 11px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            min-width: 170px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5L6 7.5L9 4.5' stroke='%236B635B' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-tint)
+        }
+
+        /* Headline */
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--accent);
+            font-weight: 700;
+            margin: 38px 0 10px
+        }
+
+        .headline {
+            font-size: 25px;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -.01em;
+            max-width: 60ch;
+            margin: 0
+        }
+
+        .headline .hi {
+            color: var(--accent)
+        }
+
+        /* KPI */
+        .kpis {
+            display: grid;
+            grid-template-columns:repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 24px
+        }
+
+        .kpi {
+            background: var(--block);
+            border-radius: 12px;
+            padding: 16px 18px
+        }
+
+        .kpi .k-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        .kpi .k-val {
+            font-size: 27px;
+            font-weight: 700;
+            margin-top: 7px;
+            letter-spacing: -.01em
+        }
+
+        .kpi .k-sub {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: 5px
+        }
+
+        .delta-up {
+            color: var(--up);
+            font-weight: 600
+        }
+
+        .delta-down {
+            color: var(--down);
+            font-weight: 600
+        }
+
+        /* Callout */
+        .callout {
+            display: flex;
+            gap: 10px;
+            background: var(--block);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin: 0 0 14px;
+            font-size: 13.5px;
+            line-height: 1.5
+        }
+
+        .callout .ic {
+            flex: 0 0 auto;
+            font-size: 15px;
+            line-height: 1.4
+        }
+
+        .callout b {
+            color: var(--ink);
+            font-weight: 600
+        }
+
+        /* Tables */
+        .tbl-wrap {
+            margin-bottom: 8px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-variant-numeric: tabular-nums
+        }
+
+        thead th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--ink-soft);
+            font-weight: 600;
+            text-align: right;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--hair)
+        }
+
+        thead th.l {
+            text-align: left
+        }
+
+        tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--hair);
+            text-align: right;
+            font-size: 13.5px
+        }
+
+        tbody td.l {
+            text-align: left;
+            font-weight: 500;
+            color: var(--ink)
+        }
+
+        tbody td.sub {
+            color: var(--ink-soft);
+            font-size: 12px
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none
+        }
+
+        .pos {
+            color: var(--up)
+        }
+
+        .neg {
+            color: var(--down)
+        }
+
+        .cm-neg {
+            color: var(--down);
+            font-weight: 600
+        }
+
+        .cm-pos {
+            font-weight: 600
+        }
+
+        .stockwarn {
+            color: var(--down);
+            font-weight: 600
+        }
+
+        .d-up {
+            color: var(--up)
+        }
+
+        .d-down {
+            color: var(--down)
+        }
+
+        .d-flat {
+            color: var(--ink-soft)
+        }
+
+        /* stacked measure cell (compare mode): now / prior / delta */
+        .cnow {
+            font-weight: 600
+        }
+
+        .cprior {
+            color: var(--ink-soft);
+            font-size: 12px;
+            margin-top: 2px
+        }
+
+        .cdelta {
+            font-size: 12px;
+            margin-top: 2px
+        }
+
+        thead td.sub-th {
+            padding: 0 12px 8px;
+            text-align: right;
+            font-size: 10px;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 600
+        }
+
+        /* skeleton */
+        .sk {
+            background: linear-gradient(90deg, #F2F1ED 25%, #EAE7E1 37%, #F2F1ED 63%);
+            background-size: 400% 100%;
+            animation: sh 1.3s ease-in-out infinite;
+            border-radius: 8px
+        }
+
+        @keyframes sh {
+            0% {
+                background-position: 100% 0
+            }
+            100% {
+                background-position: -100% 0
+            }
+        }
+
+        .sk-kpi {
+            height: 96px
+        }
+
+        .sk-row {
+            height: 40px;
+            margin-bottom: 8px
+        }
+
+        .sk-seclabel {
+            height: 11px;
+            width: 200px;
+            margin: 38px 0 14px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #F2F1ED 25%, #EAE7E1 37%, #F2F1ED 63%);
+            background-size: 400% 100%;
+            animation: sh 1.3s ease-in-out infinite
+        }
+
+        .sk-callout {
+            height: 52px;
+            margin-bottom: 14px
+        }
+
+        .sk-thead {
+            display: grid;
+            grid-template-columns:2fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--hair)
+        }
+
+        .sk-trow {
+            display: grid;
+            grid-template-columns:2fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--hair)
+        }
+
+        .err {
+            background: #FCEDEC;
+            border: 1px solid #F1C9C5;
+            color: #7A211A;
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 13.5px;
+            margin-top: 18px
+        }
+
+        .muted {
+            color: var(--ink-soft)
+        }
+
+        @media (max-width: 820px) {
+            .kpis {
+                grid-template-columns:repeat(2, 1fr)
+            }
+
+            .wrap {
+                padding: 22px 18px 48px
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="lockup">
+            <span class="wordmark">Bark</span><span class="spark">✱</span>
+            <span class="divider"></span>
+            <div>
+                <div class="store" id="storeName">Acme Hats</div>
+                <div class="board" id="boardLabel">Heroes &amp; Bleeders</div>
+            </div>
+        </div>
+        <div class="stamp" id="stamp">Loading…</div>
+    </header>
+
+    <div class="controls">
+        <div class="ctrl">
+            <label for="win">Window</label>
+            <select id="win">
+                <option value="7d">Last 7 days</option>
+                <option value="30d" selected>Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="mtd">Month to date</option>
+                <option value="ytd">Year to date</option>
+            </select>
+        </div>
+        <div class="ctrl">
+            <label for="cmp">Compare</label>
+            <select id="cmp">
+                <option value="none">None</option>
+                <option value="prev" selected>Preceding period</option>
+                <option value="year">Same period last year</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="content"></div>
+</div>
+
+<script>
+  // ---- Config (populated by copy-template.mjs; the template ships store-agnostic defaults) ----
+  function loadConfig() {
+    try {
+      return JSON.parse(document.getElementById("bark-dashboard-config").textContent);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  const CFG = loadConfig();
+
+  // Bark tool names embed an install-specific server hash, so they can't be hardcoded in a portable
+  // template. The skill resolves this session's fully-qualified names and injects them into config.tools.
+  const TOOL_SESSION = (CFG.tools && CFG.tools.startSession) || "";
+  const TOOL_ANALYTICS = (CFG.tools && CFG.tools.executeQuery) || "";
+
+  const STORE_ID = Number(CFG.storeId);
+  const STORE_NAME = CFG.storeName || ("Store " + STORE_ID);
+  const BOARD_NAME = CFG.boardName || "Heroes & Bleeders";
+  const CUR_CODE = CFG.currencyCode || "USD";
+  const TZ = CFG.timezone || undefined;
+
+  function currencySymbol(code) {
+    try {
+      const p = new Intl.NumberFormat("en", {
+        style: "currency",
+        currency: code,
+        maximumFractionDigits: 0
+      }).formatToParts(0);
+      const c = p.find(x => x.type === "currency");
+      return c ? c.value : (code + " ");
+    } catch (e) {
+      return "$";
+    }
+  }
+
+  const CUR = currencySymbol(CUR_CODE);
+
+  // Apply config to the static chrome (header store name, board label, title)
+  (function applyConfig() {
+    const s = document.getElementById("storeName");
+    if (s) s.textContent = STORE_NAME;
+    const b = document.getElementById("boardLabel");
+    if (b) b.textContent = BOARD_NAME;
+    document.title = `Bark · ${STORE_NAME} — ${BOARD_NAME}`;
+  })();
+
+  // service / non-product line items to drop so they don't masquerade as bleeders
+  const SERVICE_RE = /(free returns|free exchanges|return assurance|pay now to unlock|protect your package|delivery guarantee|navidium|shipping protection|^shipping$|productbox|^page$|gift card|insurance|^donation$)/i;
+  const EXCLUDE_CATS = ["Gift Card", "Bundle", "Insurance", "Donation", "unknown"];
+
+  const WIN = {
+    "7d": {from: "now-7d/d", to: "now/d-1s", label: "Last 7 days"},
+    "30d": {from: "now-30d/d", to: "now/d-1s", label: "Last 30 days"},
+    "90d": {from: "now-90d/d", to: "now/d-1s", label: "Last 90 days"},
+    "mtd": {from: "now/M", to: "now/d-1s", label: "Month to date"},
+    "ytd": {from: "now/y", to: "now/d-1s", label: "Year to date"},
+  };
+
+  let sessionId = null;
+
+  function buildDate(winKey, cmpKey) {
+    const w = WIN[winKey];
+    if (cmpKey === "none") return {from: w.from, to: w.to};
+    const fn = cmpKey === "year" ? "PREVIOUS_YEAR_PERIOD_MATCHING_WEEKDAYS" : "PRECEDING_PERIOD_MATCHING_WEEKDAYS";
+    return {
+      primary: {from: w.from, to: w.to},
+      secondary: {
+        from: `${fn}_FROM(${w.from}, ${w.to})`,
+        to: `${fn}_TO(${w.from}, ${w.to})`
+      }
+    };
+  }
+
+  async function callTool(name, args) {
+    if (!name) throw new Error("Bark tool name missing from config — re-publish this board so config.tools is populated.");
+    const r = await window.cowork.callMcpTool(name, args);
+    if (r && r.isError) {
+      const msg = (r.content && r.content[0] && r.content[0].text) ? r.content[0].text : "Unknown MCP error";
+      throw new Error(msg);
+    }
+    if (r && r.structuredContent) return r.structuredContent;
+    // bark_start_session returns two content blocks (JSON + markdown briefing) — find the JSON one.
+    if (r && r.content) {
+      for (const b of r.content) {
+        try {
+          return JSON.parse(b.text);
+        } catch (_) {
+        }
+      }
+    }
+    const txt = (r && r.content && r.content[0] && r.content[0].text) || "";
+    throw new Error("Unexpected non-JSON response: " + txt.slice(0, 200));
+  }
+
+  async function ensureSession(force) {
+    if (sessionId && !force) return sessionId;
+    const res = await callTool(TOOL_SESSION, {});
+    if (res && res.sessionId) {
+      sessionId = res.sessionId;
+      return sessionId;
+    }
+    throw new Error("Could not obtain Bark session id");
+  }
+
+  async function fetchData(winKey, cmpKey) {
+    const sid = await ensureSession();
+    const annotations = {
+      sessionId: sid,
+      activeTurn: {
+        idx: 1, user: `${BOARD_NAME} dashboard`,
+        context: `Live Cowork dashboard for ${STORE_NAME} (#${STORE_ID}) — product-level contribution margin heroes and bleeders.`
+      }
+    };
+    const query = {
+      date: buildDate(winKey, cmpKey),
+      dimensions: [{key: "products.title"}],
+      measures: [
+        {key: "derivatives.contributionMarginAmount"},
+        {key: "derivatives.contributionMarginPercentage"},
+        {key: "sales.netSalesAmount"},
+        {key: "derivatives.mediaCostAmount"},
+        {key: "derivatives.profitOnAdSpend"},
+        {key: "productVariants.withInventoryCountPercentage"}
+      ],
+      where: [{key: "products.category", operator: "excludes", value: EXCLUDE_CATS}],
+      order: [{key: "derivatives.contributionMarginAmount", direction: "desc"}],
+      totals: true
+    };
+    return await callTool(TOOL_ANALYTICS, {
+      subject: {type: "store", storeId: STORE_ID},
+      query,
+      _annotations: annotations
+    });
+  }
+
+  // ---------- formatting ----------
+  function fmtCur(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    const a = Math.abs(n), s = n < 0 ? "-" : "";
+    if (a >= 1000000) return s + CUR + (a / 1000000).toFixed(2) + "M";
+    if (a >= 1000) return s + CUR + (a / 1000).toFixed(1) + "K";
+    return s + CUR + a.toLocaleString("en-US", {maximumFractionDigits: 0});
+  }
+
+  function fmtCurFull(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    const s = n < 0 ? "-" : "";
+    return s + CUR + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: 0});
+  }
+
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return (n * 100).toFixed(1) + "%";
+  }
+
+  function fmtDec(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return n.toFixed(2);
+  }
+
+  function fmtDeltaPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    const v = (n * 100), s = v > 0 ? "▲ " : (v < 0 ? "▼ " : "");
+    return s + Math.abs(v).toFixed(1) + "%";
+  }
+
+  // ---------- render ----------
+  const content = document.getElementById("content");
+
+  function skeleton() {
+    const kp = Array.from({length: 4}, () => '<div class="sk sk-kpi"></div>').join("");
+    const line = (w, h) => `<div class="sk" style="width:${w};height:${h}px;margin-bottom:10px"></div>`;
+    const tableSk = n =>
+      '<div class="sk-thead">' + Array.from({length: 5}, (_, i) => `<div class="sk" style="height:10px;width:${i === 0 ? '42%' : '60%'};justify-self:${i === 0 ? 'start' : 'end'}"></div>`).join("") + '</div>' +
+      Array.from({length: n}, () =>
+        '<div class="sk-trow">' + Array.from({length: 5}, (_, i) => `<div class="sk" style="height:13px;width:${i === 0 ? '70%' : '55%'};justify-self:${i === 0 ? 'start' : 'end'}"></div>`).join("") + '</div>'
+      ).join("");
+    content.innerHTML =
+      '<div class="kpis">' + kp + '</div>' +
+      '<div class="sk-seclabel"></div>' + line('72%', 22) + line('54%', 22) +
+      '<div class="sk-seclabel" style="margin-top:34px"></div>' +
+      '<div class="sk sk-callout"></div>' + tableSk(6) +
+      '<div class="sk-seclabel" style="margin-top:34px"></div>' +
+      '<div class="sk sk-callout"></div>' + tableSk(6);
+  }
+
+  function colMap(columns) {
+    const m = {};
+    (columns || []).forEach((c, i) => m[c] = i);
+    return m;
+  }
+
+  function build(resp) {
+    const data = (resp && resp.data) || {};
+    const cols = data.columns || [], rows = data.rows || [], totals = data.totals || [];
+    const m = colMap(cols);
+    // Detect compare mode from the response columns, not the control — if the API returns a single
+    // period while "compare" is selected, this keeps the board reading the real (single-period) values.
+    const compare = cols.some(c => c.endsWith(".primary"));
+    const suf = compare ? ".primary" : "";
+
+    const CM = "derivatives.contributionMarginAmount", CMP = "derivatives.contributionMarginPercentage",
+      NS = "sales.netSalesAmount", MED = "derivatives.mediaCostAmount",
+      POAS = "derivatives.profitOnAdSpend", STK = "productVariants.withInventoryCountPercentage",
+      TITLE = "products.title";
+
+    const gi = (row, key) => {
+      const i = m[key + suf];
+      return i === undefined ? null : parseFloat(row[i]);
+    };
+    const gPrior = (row, key) => {
+      const i = m[key + ".secondary"];
+      return i === undefined ? null : parseFloat(row[i]);
+    };
+    const gChg = (row, key) => {
+      const i = m[key + ".changePercent"];
+      return i === undefined ? null : parseFloat(row[i]);
+    };
+    const title = (row) => row[m[TITLE]];
+    // pack a measure into {now, prior, chg} so every table cell can stack now/prior/delta in compare mode
+    const trio = (row, key) => ({now: gi(row, key), prior: gPrior(row, key), chg: gChg(row, key)});
+
+    // parse + filter
+    const all = rows.map(r => ({
+      title: title(r),
+      cm: trio(r, CM), cmPct: trio(r, CMP), ns: trio(r, NS), med: trio(r, MED),
+      poas: trio(r, POAS), stk: trio(r, STK)
+    })).filter(p => p.title && !SERVICE_RE.test(p.title));
+
+    // Heroes: positive CM, top 8
+    const heroes = all.filter(p => p.cm.now > 0).sort((a, b) => b.cm.now - a.cm.now).slice(0, 10);
+    // Bleeders: CM<0, real selling/exposed products (had net sales OR absorbed media), worst first
+    const bleeders = all.filter(p => p.cm.now < 0 && (Math.abs(p.ns.now) > 0 || p.med.now > 0))
+      .sort((a, b) => a.cm.now - b.cm.now).slice(0, 10);
+
+    // totals
+    const totCM = totals.length ? parseFloat(totals[m[CM + suf]]) : null;
+    const totCMpct = totals.length ? parseFloat(totals[m[CMP + suf]]) : null;
+    const totCMprior = (compare && totals.length) ? parseFloat(totals[m[CM + ".secondary"]]) : null;
+    const totCMchg = (compare && totals.length) ? parseFloat(totals[m[CM + ".changePercent"]]) : null;
+    const totNS = totals.length ? parseFloat(totals[m[NS + suf]]) : null;
+
+    // computed metrics
+    const posCM = all.filter(p => p.cm.now > 0).sort((a, b) => b.cm.now - a.cm.now);
+    const top5 = posCM.slice(0, 5).reduce((s, p) => s + p.cm.now, 0);
+    const posTotal = posCM.reduce((s, p) => s + p.cm.now, 0);
+    const top5share = posTotal > 0 ? top5 / posTotal : 0;
+    const allBleeders = all.filter(p => p.cm.now < 0 && (Math.abs(p.ns.now) > 0 || p.med.now > 0));
+    const bleedTotal = allBleeders.reduce((s, p) => s + p.cm.now, 0);
+    const mediaOnBleeders = allBleeders.reduce((s, p) => s + (p.med.now || 0), 0);
+
+    // ---- KPI cards ----
+    function kpiDelta(chg, prior, goodWhenUp = true) {
+      if (!compare || chg === null || isNaN(chg)) return "";
+      const up = chg > 0;
+      const good = goodWhenUp ? up : !up;
+      const cls = chg === 0 ? "" : (good ? "delta-up" : "delta-down");
+      return `<div class="k-sub"><span class="${cls}">${fmtDeltaPct(chg)}</span> · from ${fmtCur(prior)}</div>`;
+    }
+
+    const kpis = `
+    <div class="kpis">
+      <div class="kpi"><div class="k-label">Total CM</div>
+        <div class="k-val num">${fmtCur(totCM)}</div>${kpiDelta(totCMchg, totCMprior, true)}</div>
+      <div class="kpi"><div class="k-label">CM %</div>
+        <div class="k-val num">${fmtPct(totCMpct)}</div>
+        <div class="k-sub">contribution margin on net sales</div></div>
+      <div class="kpi"><div class="k-label">Top-5 share of CM</div>
+        <div class="k-val num">${fmtPct(top5share)}</div>
+        <div class="k-sub">profit concentration in 5 products</div></div>
+      <div class="kpi"><div class="k-label">Media on bleeders</div>
+        <div class="k-val num">${fmtCur(mediaOnBleeders)}</div>
+        <div class="k-sub">exposure riding ${allBleeders.length} CM-negative products</div></div>
+    </div>`;
+
+    // ---- headline ----
+    const leader = posCM[0];
+    let headline = "";
+    if (leader && posTotal > 0) {
+      headline = `<p class="headline">A handful of products carry the profit — the top 5 hold
+      <span class="hi">${fmtPct(top5share)}</span> of contribution margin, led by
+      <span class="hi">${escapeHtml(leader.title)}</span> at <span class="hi">${fmtCur(leader.cm.now)}</span>,
+      while ${allBleeders.length} products bleed <span class="hi">${fmtCur(Math.abs(bleedTotal))}</span> back.</p>`;
+    } else {
+      headline = `<p class="headline">From <span class="hi">${fmtCur(totNS)}</span> net sales to
+      <span class="hi">${fmtCur(totCM)}</span> contribution margin.</p>`;
+    }
+
+    // ---- table cell renderers ----
+    // In compare mode each measure cell stacks three rows: now (top), prior (middle), delta (bottom).
+    // Outside compare mode it shows the current value only.
+    function measureCell(v, fmt, {good = true, nowCls = "", warn = false} = {}) {
+      const warnCls = (warn && v.now !== null && v.now < 0.5) ? "stockwarn" : "";
+      const nowHtml = `<div class="cnow ${nowCls} ${warnCls}">${fmt(v.now)}</div>`;
+      if (!compare) return `<td class="num">${nowHtml}</td>`;
+      const dcls = (v.chg === null || isNaN(v.chg)) ? "d-flat"
+        : (v.chg === 0 ? "d-flat" : ((good ? v.chg > 0 : v.chg < 0) ? "d-up" : "d-down"));
+      return `<td class="num">${nowHtml}`
+        + `<div class="cprior">${fmt(v.prior)}</div>`
+        + `<div class="cdelta ${dcls}">${fmtDeltaPct(v.chg)}</div></td>`;
+    }
+
+    let heroesRows = heroes.map(p => `
+    <tr>
+      <td class="l">${escapeHtml(p.title)}</td>
+      ${measureCell(p.cm, fmtCurFull, {good: true, nowCls: "cm-pos"})}
+      ${measureCell(p.cmPct, fmtPct, {good: true})}
+      ${measureCell(p.poas, fmtDec, {good: true})}
+      ${measureCell(p.stk, fmtPct, {good: true, warn: true})}
+    </tr>`).join("");
+
+    const heroesHead = `
+    <thead>
+      <tr>
+        <th class="l">Product</th>
+        <th>CM $</th><th>CM %</th><th>POAS</th><th>% in stock</th>
+      </tr>
+    </thead>`;
+
+    const heroLede = leader
+      ? `<div class="callout"><span class="ic">💡</span><div>Your top products carry most of the CM — <b>${escapeHtml(leader.title)}</b> alone returns <b>${fmtCur(leader.cm.now)}</b> at <b>${fmtPct(leader.cmPct.now)}</b> CM and <b>${fmtDec(leader.poas.now)}</b> POAS. Protect their stock and visibility in-season.</div></div>`
+      : "";
+
+    // ---- bleeders ----
+    const worst = bleeders[0];
+    let bleedLede = "";
+    if (worst) {
+      const stockTxt = worst.stk.now !== null ? fmtPct(worst.stk.now) : "—";
+      const misalign = worst.stk.now !== null && worst.stk.now < 0.5;
+      bleedLede = `<div class="callout"><span class="ic">💡</span><div>Biggest drain: <b>${escapeHtml(worst.title)}</b> bled <b>${fmtCur(Math.abs(worst.cm.now))}</b> with <b>${fmtCur(worst.med.now)}</b> of media riding it and only <b>${stockTxt}</b> of variants in stock.${misalign ? " Low stock with exposure still pointed at it looks like exposure–inventory misalignment — replenish and suppress the out-of-stock page upstream (campaigns / feeds), not a price tweak." : " Review what exposure is being routed to it upstream."}</div></div>`;
+    }
+
+    let bleedRows = bleeders.map(p => `
+    <tr>
+      <td class="l">${escapeHtml(p.title)}</td>
+      ${measureCell(p.cm, fmtCurFull, {good: true, nowCls: "cm-neg"})}
+      ${measureCell(p.med, fmtCur, {good: false})}
+      ${measureCell(p.poas, fmtDec, {good: true})}
+      ${measureCell(p.stk, fmtPct, {good: true, warn: true})}
+    </tr>`).join("");
+
+    const bleedHead = `
+    <thead>
+      <tr>
+        <th class="l">Product</th>
+        <th>CM $</th><th>Media absorbed</th><th>POAS</th><th>% in stock</th>
+      </tr>
+    </thead>`;
+
+    content.innerHTML =
+      kpis +
+      `<div class="section-label">The profit picture</div>` + headline +
+      `<div class="section-label" style="margin-top:34px">Heroes — products making the margin</div>` +
+      heroLede +
+      `<div class="tbl-wrap"><table>${heroesHead}<tbody>${heroesRows || '<tr><td class="l muted" colspan="5">No positive-CM products in this window.</td></tr>'}</tbody></table></div>` +
+      `<div class="section-label" style="margin-top:34px">Bleeders — products draining the margin</div>` +
+      bleedLede +
+      `<div class="tbl-wrap"><table>${bleedHead}<tbody>${bleedRows || '<tr><td class="l muted" colspan="5">No CM-negative products in this window.</td></tr>'}</tbody></table></div>` +
+      `<div class="k-sub" style="margin-top:18px">Service lines (returns, shipping protection, gift cards, packaging) and excluded categories are filtered out. Media at product level is view-share attributed exposure, not a per-product budget.</div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
+  }
+
+  async function refresh() {
+    const winKey = document.getElementById("win").value;
+    const cmpKey = document.getElementById("cmp").value;
+    document.getElementById("stamp").textContent = "Loading…";
+    skeleton();
+    try {
+      let resp;
+      try {
+        resp = await fetchData(winKey, cmpKey);
+      } catch (e) {
+        // a stale/expired session id fails mid-flight — re-mint once and retry.
+        if (/session/i.test(e.message || "")) {
+          await ensureSession(true);
+          resp = await fetchData(winKey, cmpKey);
+        } else throw e;
+      }
+      build(resp);
+      const now = new Date();
+      const stampOpts = {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"};
+      if (TZ) stampOpts.timeZone = TZ;
+      document.getElementById("stamp").textContent =
+        "Data updated " + now.toLocaleString("en-US", stampOpts);
+    } catch (e) {
+      content.innerHTML = `<div class="err"><b>Couldn't load Bark data.</b><br>${escapeHtml(e.message || String(e))}</div>`;
+      document.getElementById("stamp").textContent = "Error";
+    }
+  }
+
+  document.getElementById("win").addEventListener("change", refresh);
+  document.getElementById("cmp").addEventListener("change", refresh);
+  refresh();
+</script>
+</body>
+</html>

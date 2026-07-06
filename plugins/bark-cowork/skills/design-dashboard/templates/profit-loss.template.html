@@ -11,7 +11,10 @@
             "storeName": "Acme Hats",
             "currencyCode": "USD",
             "timezone": "America/New_York",
-            "tools": { "startSession": "", "executeQuery": "" }
+            "tools": {
+                "startSession": "",
+                "executeQuery": ""
+            }
         }
     </script>
     <style>
@@ -1037,6 +1040,16 @@
     return (part / whole * 100).toFixed(1) + "%";
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c]));
+  }
+
   function paintCategory(catRes, compare) {
     const cols = catRes.data.columns, cm = colMap(cols);
     const catIdx = cm["products.category"];
@@ -1067,7 +1080,7 @@
       const share = totalCM ? (lead.cm / totalCM * 100) : null;
       if (share !== null) {
         document.getElementById("catCallout").innerHTML =
-          `<div class="callout"><span class="ico">💡</span><div><strong>${lead.cat}</strong> carries about ` +
+          `<div class="callout"><span class="ico">💡</span><div><strong>${escapeHtml(lead.cat)}</strong> carries about ` +
           `<strong>${share.toFixed(0)}%</strong> of contribution margin (${fmtCur(lead.cm, true)} of ${fmtCur(totalCM, true)})` +
           ` at ${fmtPct(lead.pct)} CM — protect its stock and visibility.</div></div>`;
       }
@@ -1077,7 +1090,7 @@
       const w = Math.min(100, r.cm / base * 100);
       const prior = compare ? fmtCur(r.prior, true) : "";
       const delta = compare ? deltaHTML(r.chg, false) : "";
-      return `<div class="rrow"><div class="name">${r.cat}</div>` +
+      return `<div class="rrow"><div class="name">${escapeHtml(r.cat)}</div>` +
         `<div class="barwrap"><div class="bar" style="width:${w}%"></div></div>` +
         `<div class="col now">${fmtCur(r.cm, true)}</div>` +
         `<div class="col prior">${prior}</div>` +

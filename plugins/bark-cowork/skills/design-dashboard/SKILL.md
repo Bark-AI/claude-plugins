@@ -457,17 +457,19 @@ Available templates:
   **Net Sales** → − COGS → − Fulfillment → − Payments → − Media → **Contribution Margin**) → **~four
   detail-table wells** (Sales / Discounts & returns / Margin & profit / Media & traffic), each row
   *metric · now · prior · Δ*. Copy it, or open it as the style reference for a custom board.
+- [`templates/cm-heroes-bleeders.template.html`](templates/cm-heroes-bleeders.template.html) —
+  **Contribution Margin — Heroes & Bleeders**: product-level CM. KPIs (Total CM, CM %, top-5 share,
+  media on bleeders) → **Heroes table** (top 10 by CM) → **Bleeders table** (CM < 0, worst first, CM in
+  red). Excludes service/returns-only line items; a low-stock bleeder with media riding it is
+  exposure–inventory misalignment; media is view-share, not a per-SKU budget.
+- [`templates/category-analysis.template.html`](templates/category-analysis.template.html) —
+  **Category Analysis (where the margin lives)**: per `products.category`. KPIs (Net Sales, CM, CM %,
+  Media) → **CM over time** (fixed trailing-12-month Chart.js line, top 5 categories, NOT tied to the
+  Window) → **CM by category** (ranked bars) → **category detail table**. `products.category` is a clean
+  split (safe to rank and sum); non-merchandise categories are excluded.
 
 The boards below are the roadmap (added as real templates over time):
 
-- **Contribution Margin — Heroes & Bleeders** — product-level CM. KPIs (Total CM, CM %, top-5 share,
-  media riding the bleeders) → **Heroes table** (top 10 by CM) → **Bleeders table** (CM < 0, worst
-  first, CM in red). Exclude service/returns-only line items; a low-stock bleeder with media riding it
-  is exposure-inventory misalignment; media is view-share, not a per-SKU budget.
-- **Category Analysis (where the margin lives)** — per `products.category`. Window + Compare + **Top N**.
-  KPIs → **CM over time** (fixed trailing-12-month line chart, NOT tied to Window) → **CM by category**
-  (ranked bars, Top N) → **category detail table**. `products.category` is a clean split (safe to rank
-  and sum); exclude non-merchandise "categories".
 - **POAS & Channels (media efficiency)** — Window scopes the whole board. **Blended POAS over time**
   (line chart, resolution matched to the window, dashed **breakeven at 0**) → **by-channel table**
   (Net Sales · Net Δ · Media · CM · CM Δ · POAS, "All channels" totals row; negative CM / sub-breakeven

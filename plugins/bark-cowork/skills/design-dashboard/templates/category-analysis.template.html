@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bark · Category Analysis</title>
+    <!-- Store config — populated by copy-template.mjs. This is the ONLY place store-specific
+         data (name, id, currency, timezone, Bark tool names) lives; the template body and JS
+         below read everything from here at load. Defaults are neutral placeholders. -->
+    <script type="application/json" id="bark-dashboard-config">
+        {
+            "boardName": "Category Analysis",
+            "storeId": 0,
+            "storeName": "Acme Hats",
+            "currencyCode": "USD",
+            "timezone": "America/New_York",
+            "tools": {
+                "startSession": "",
+                "executeQuery": ""
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"
+            integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi"
+            crossorigin="anonymous"></script>
+    <style>
+        :root {
+            color-scheme: light;
+            --page: #FFFFFF;
+            --block: #F7F6F3;
+            --ink: #1A1714;
+            --ink-soft: #6B635B;
+            --hair: #EAE7E1;
+            --accent: #AD1A72;
+            --accent-tint: #F0E9EE;
+            --up: #2F6E4F;
+            --down: #C0392B;
+            --indigo: #252751;
+            --spark: #EA43E2;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html, body {
+            margin: 0;
+            background: var(--page);
+            color: var(--ink);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 34px 40px 72px;
+        }
+
+        .tnum {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* header */
+        header.top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 26px;
+        }
+
+        .lock {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .wordmark {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--indigo);
+            letter-spacing: -.01em;
+            line-height: 1;
+        }
+
+        .spark {
+            font-size: 16px;
+            color: var(--spark);
+            margin-left: 4px;
+            line-height: 1;
+        }
+
+        .divider {
+            width: 1px;
+            height: 22px;
+            background: var(--hair);
+            margin: 0 14px;
+        }
+
+        .storeblock {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .storename {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.1;
+        }
+
+        .boardlabel {
+            font-size: 13px;
+            color: var(--ink-soft);
+            line-height: 1.1;
+        }
+
+        .stamp {
+            font-size: 13px;
+            color: var(--ink-soft);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* controls */
+        .controls {
+            display: flex;
+            gap: 22px;
+            align-items: flex-end;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .ctl {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .ctl label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .ctl select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: var(--page);
+            border: 1px solid var(--hair);
+            border-radius: 9px;
+            padding: 8px 30px 8px 12px;
+            font-size: 14px;
+            font-family: var(--sans);
+            color: var(--ink);
+            cursor: pointer;
+            min-width: 168px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%236B635B' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 11px center;
+        }
+
+        .ctl select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-tint);
+        }
+
+        .seclabel {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin: 0 0 10px;
+        }
+
+        .headline {
+            font-size: 27px;
+            font-weight: 700;
+            line-height: 1.28;
+            letter-spacing: -.01em;
+            margin: 0 0 30px;
+            max-width: 960px;
+        }
+
+        .headline .fig {
+            color: var(--accent);
+        }
+
+        /* kpis */
+        .kpis {
+            display: grid;
+            grid-template-columns:repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 40px;
+        }
+
+        .kpi {
+            background: var(--block);
+            border-radius: 12px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .kpi .k-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .kpi .k-val {
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -.01em;
+        }
+
+        .kpi .k-delta {
+            font-size: 12.5px;
+            color: var(--ink-soft);
+        }
+
+        .delta-up {
+            color: var(--up);
+        }
+
+        .delta-down {
+            color: var(--down);
+        }
+
+        section.block {
+            margin-bottom: 44px;
+        }
+
+        .callout {
+            background: var(--block);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 14.5px;
+            line-height: 1.5;
+            color: var(--ink);
+            margin: 0 0 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .callout .ic {
+            flex: none;
+        }
+
+        .callout b {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* trend chart */
+        .chart-card {
+            border: 1px solid var(--hair);
+            border-radius: 14px;
+            padding: 18px 18px 12px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 360px;
+            width: 100%;
+        }
+
+        /* ranked bars */
+        .bars {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns:190px 1fr 96px 96px 78px;
+            align-items: center;
+            gap: 14px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .bar-row:last-child {
+            border-bottom: none;
+        }
+
+        .bar-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .bar-sub {
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            margin-top: 2px;
+        }
+
+        .bar-track {
+            background: var(--accent-tint);
+            border-radius: 7px;
+            height: 22px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            background: var(--accent);
+            height: 100%;
+            border-radius: 7px;
+            min-width: 2px;
+        }
+
+        .bar-now {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .bar-prior {
+            font-size: 13px;
+            color: var(--ink-soft);
+            text-align: right;
+        }
+
+        .bar-delta {
+            font-size: 13px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .col-h {
+            display: grid;
+            grid-template-columns:190px 1fr 96px 96px 78px;
+            gap: 14px;
+            margin-bottom: 4px;
+        }
+
+        .col-h span {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .col-h .r {
+            text-align: right;
+        }
+
+        /* table */
+        .tbl {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            text-align: right;
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .tbl th.l {
+            text-align: left;
+        }
+
+        .tbl td {
+            font-size: 14px;
+            padding: 10px;
+            border-bottom: 1px solid var(--hair);
+            text-align: right;
+        }
+
+        .tbl td.l {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .tbl tr:last-child td {
+            border-bottom: none;
+        }
+
+        .neg {
+            color: var(--down);
+        }
+
+        /* stacked measure cell (compare mode): now / prior / delta as rows within a cell */
+        .cnow {
+            font-weight: 600;
+        }
+
+        .cprior {
+            color: var(--ink-soft);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .cdelta {
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .d-up {
+            color: var(--up);
+        }
+
+        .d-down {
+            color: var(--down);
+        }
+
+        .d-flat {
+            color: var(--ink-soft);
+        }
+
+        /* skeleton */
+        .sk {
+            background: linear-gradient(90deg, #F2F1ED 25%, #EAE7E1 37%, #F2F1ED 63%);
+            background-size: 400% 100%;
+            animation: sh 1.3s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes sh {
+            0% {
+                background-position: 100% 0
+            }
+            100% {
+                background-position: -100% 0
+            }
+        }
+
+        .sk-kpi {
+            height: 96px;
+            border-radius: 12px;
+        }
+
+        .sk-headline {
+            height: 22px;
+            margin-bottom: 10px;
+        }
+
+        .sk-callout {
+            height: 52px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+        }
+
+        /* line-chart-shaped skeleton: legend chips over a gridded plot with a wavy area silhouette */
+        .sk-chart-legend {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .sk-chip {
+            height: 12px;
+            width: 74px;
+            border-radius: 6px;
+        }
+
+        .sk-plot {
+            position: relative;
+            height: 300px;
+            overflow: hidden;
+        }
+
+        .sk-grid {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--hair);
+        }
+
+        .sk-area {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 74%;
+            clip-path: polygon(0 62%, 8% 46%, 17% 56%, 25% 32%, 34% 42%, 42% 22%, 50% 36%, 59% 26%, 67% 46%, 75% 30%, 84% 52%, 92% 36%, 100% 46%, 100% 100%, 0 100%);
+        }
+
+        .sk-bar {
+            display: grid;
+            grid-template-columns:190px 1fr 96px 96px 78px;
+            gap: 14px;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .sk-bar:last-child {
+            border-bottom: none;
+        }
+
+        .sk-thead {
+            display: grid;
+            grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .sk-trow {
+            display: grid;
+            grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .err {
+            background: #fdecea;
+            border: 1px solid #f3c6bf;
+            color: #8a271b;
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 14px;
+        }
+
+        .muted {
+            color: var(--ink-soft);
+            font-size: 12.5px;
+        }
+
+        @media (max-width: 820px) {
+            .kpis {
+                grid-template-columns:repeat(2, 1fr);
+            }
+
+            .bar-row, .col-h {
+                grid-template-columns:130px 1fr 78px 68px;
+            }
+
+            .bar-row .bar-prior, .col-h .prior {
+                display: none;
+            }
+
+            .wrap {
+                padding: 24px 18px 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="top">
+        <div class="lock">
+            <span class="wordmark">Bark</span><span class="spark">✱</span>
+            <span class="divider"></span>
+            <span class="storeblock">
+        <span class="storename" id="storeName">Acme Hats</span>
+        <span class="boardlabel" id="boardLabel">Category Analysis</span>
+      </span>
+        </div>
+        <div class="stamp" id="stamp">Data updated —</div>
+    </header>
+
+    <div class="controls">
+        <div class="ctl">
+            <label for="win">Window</label>
+            <select id="win">
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d" selected>Last 90 days</option>
+                <option value="mtd">Month to date</option>
+                <option value="ytd">Year to date</option>
+            </select>
+        </div>
+        <div class="ctl">
+            <label for="cmp">Compare</label>
+            <select id="cmp">
+                <option value="none">None</option>
+                <option value="prev" selected>Preceding period</option>
+                <option value="year">Same period last year</option>
+            </select>
+        </div>
+    </div>
+
+    <p class="seclabel">Category performance</p>
+    <h1 class="headline" id="headline"><span class="sk" style="display:inline-block;width:70%;height:28px"></span></h1>
+
+    <div class="kpis" id="kpis"></div>
+
+    <!-- Trend over time -->
+    <section class="block">
+        <p class="seclabel">Contribution margin over time</p>
+        <div class="callout" id="trend-callout" style="visibility:hidden">
+            <span class="ic">💡</span><span class="txt"></span>
+        </div>
+        <div class="chart-card">
+            <div class="chart-wrap" id="chartWrap">
+                <canvas id="trend"></canvas>
+            </div>
+            <p class="muted" style="margin:8px 2px 0">Monthly contribution margin, trailing 12 months — top categories.
+                Fixed 12-month view; not affected by the Window control.</p>
+        </div>
+    </section>
+
+    <!-- Ranked bars -->
+    <section class="block">
+        <p class="seclabel">Contribution margin by category</p>
+        <div class="callout" id="rank-callout" style="visibility:hidden">
+            <span class="ic">💡</span><span class="txt"></span>
+        </div>
+        <div class="col-h" id="rank-head" style="display:none">
+            <span></span><span></span><span class="r">Now</span><span class="r prior">Prior</span><span
+                class="r">Δ</span>
+        </div>
+        <div class="bars" id="bars"></div>
+    </section>
+
+    <!-- Detail table -->
+    <section class="block">
+        <p class="seclabel">Category detail</p>
+        <div id="tblwrap"></div>
+    </section>
+
+    <p class="muted" id="foot"></p>
+</div>
+
+<script>
+  /* ---------- config (populated by copy-template.mjs; template body/JS holds NO store data) ---------- */
+  function loadConfig() {
+    try {
+      return JSON.parse(document.getElementById("bark-dashboard-config").textContent);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  const CFG = loadConfig();
+
+  // Bark tool names embed an install-specific server hash — never hardcode them; read from config.tools.
+  const T_SESSION = (CFG.tools && CFG.tools.startSession) || "";
+  const T_ANALYTICS = (CFG.tools && CFG.tools.executeQuery) || "";
+
+  const STORE_ID = Number(CFG.storeId);
+  const CUR_CODE = CFG.currencyCode || "USD";
+  const TZ = CFG.timezone || undefined;
+  const STORE_NAME = CFG.storeName || ("Store " + STORE_ID);
+  const BOARD_NAME = CFG.boardName || "Category Analysis";
+
+  function currencySymbol(code) {
+    try {
+      const p = new Intl.NumberFormat("en", {
+        style: "currency",
+        currency: code,
+        maximumFractionDigits: 0
+      }).formatToParts(0);
+      const c = p.find(x => x.type === "currency");
+      return c ? c.value : (code + " ");
+    } catch (e) {
+      return "$";
+    }
+  }
+
+  const SYM = currencySymbol(CUR_CODE);
+
+  // Apply config to the static chrome (header, board label, title)
+  (function applyConfig() {
+    const s = document.getElementById("storeName");
+    if (s) s.textContent = STORE_NAME;
+    const b = document.getElementById("boardLabel");
+    if (b) b.textContent = BOARD_NAME;
+    document.title = "Bark · " + STORE_NAME + " — " + BOARD_NAME;
+  })();
+
+  // service / non-merchandise categories to exclude from a category analysis (generic, not store data)
+  const EXCLUDE = ["Gift Card", "Gift Cards", "Bundle", "Insurance", "Donation", "unknown",
+    "Delivery Guarantee", "Auto-Fulfill", "Productbox", "return", "Return", "Return Assurance"];
+
+  let SESSION = null;
+  const fmtCache = {};
+
+  /* ---------- bridge ---------- */
+  async function call(name, args) {
+    const r = await window.cowork.callMcpTool(name, args);
+    if (r && r.isError) {
+      const msg = (r.content && r.content[0] && r.content[0].text) ? r.content[0].text : "Unknown MCP error";
+      throw new Error(msg);
+    }
+    if (r && r.structuredContent) return r.structuredContent;
+    const txt = r && r.content && r.content[0] && r.content[0].text;
+    if (typeof txt !== "string") throw new Error("Unexpected tool payload");
+    try {
+      return JSON.parse(txt);
+    } catch (e) {
+      throw new Error("Non-JSON payload: " + txt.slice(0, 140));
+    }
+  }
+
+  async function ensureSession() {
+    if (SESSION) return SESSION;
+    const r = await window.cowork.callMcpTool(T_SESSION, {});
+    if (r && r.isError) throw new Error((r.content && r.content[0] && r.content[0].text) || "session error");
+    if (r && r.structuredContent && r.structuredContent.sessionId) {
+      SESSION = r.structuredContent.sessionId;
+      return SESSION;
+    }
+    const blocks = (r && r.content) || [];
+    for (const b of blocks) {
+      if (b && typeof b.text === "string") {
+        try {
+          const j = JSON.parse(b.text);
+          if (j && j.sessionId) {
+            SESSION = j.sessionId;
+            return SESSION;
+          }
+        } catch (_) {
+        }
+      }
+    }
+    throw new Error("Could not read sessionId");
+  }
+
+  function ann(user) {
+    return {
+      sessionId: SESSION, activeTurn: {
+        idx: 1, user,
+        context: STORE_NAME + " (#" + STORE_ID + ") live " + BOARD_NAME + " dashboard artifact re-querying Bark on open / control change."
+      }
+    };
+  }
+
+  async function analytics(query, user) {
+    await ensureSession();
+    let payload = {subject: {type: "store", storeId: STORE_ID}, query, _annotations: ann(user)};
+    try {
+      return await call(T_ANALYTICS, payload);
+    } catch (e) {
+      if (/session/i.test(e.message)) {
+        SESSION = null;
+        await ensureSession();
+        payload._annotations = ann(user);
+        return await call(T_ANALYTICS, payload);
+      }
+      throw e;
+    }
+  }
+
+  /* ---------- date presets ---------- */
+  const PRESETS = {
+    "7d": {from: "now-7d/d", to: "now/d-1s", label: "Last 7 days"},
+    "30d": {from: "now-30d/d", to: "now/d-1s", label: "Last 30 days"},
+    "90d": {from: "now-90d/d", to: "now/d-1s", label: "Last 90 days"},
+    "mtd": {from: "now/M", to: "now/d-1s", label: "Month to date"},
+    "ytd": {from: "now/y", to: "now/d-1s", label: "Year to date"},
+  };
+
+  function buildDate(winKey, cmpKey) {
+    const p = PRESETS[winKey];
+    const prim = {from: p.from, to: p.to};
+    if (cmpKey === "none") return prim;
+    const F = cmpKey === "year" ? "PREVIOUS_YEAR_PERIOD_MATCHING_WEEKDAYS" : "PRECEDING_PERIOD_MATCHING_WEEKDAYS";
+    return {
+      primary: prim, secondary: {
+        from: F + "_FROM(" + p.from + ", " + p.to + ")",
+        to: F + "_TO(" + p.from + ", " + p.to + ")"
+      }
+    };
+  }
+
+  /* ---------- formatting ---------- */
+  function memberFmt(members) {
+    const m = {};
+    (members || []).forEach(x => m[x.key] = x.format);
+    return m;
+  }
+
+  function num(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const n = +v;
+    return isNaN(n) ? null : n;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c]));
+  }
+
+  function money(v, compact) {
+    if (v === null) return "—";
+    const a = Math.abs(v), s = v < 0 ? "-" : "";
+    if (compact) {
+      if (a >= 1e6) return s + SYM + (a / 1e6).toFixed(2) + "M";
+      if (a >= 1e3) return s + SYM + (a / 1e3).toFixed(1) + "K";
+      return s + SYM + a.toFixed(0);
+    }
+    return s + SYM + a.toLocaleString(undefined, {maximumFractionDigits: 0});
+  }
+
+  function pct(v) {
+    return v === null ? "—" : (v * 100).toFixed(1) + "%";
+  }
+
+  function dec(v) {
+    return v === null ? "—" : v.toFixed(2);
+  }
+
+  function intFmt(v) {
+    return v === null ? "—" : Math.round(v).toLocaleString();
+  }
+
+  function fmtDeltaPct(v) {
+    if (v === null || v === undefined || isNaN(v)) return "—";
+    const p = v * 100, s = p > 0 ? "▲ " : (p < 0 ? "▼ " : "");
+    return s + Math.abs(p).toFixed(1) + "%";
+  }
+
+  function fmtVal(key, v, compact) {
+    const f = fmtCache[key];
+    if (f === "currency") return money(v, compact);
+    if (f === "percent") return pct(v);
+    if (f === "decimal") return dec(v);
+    if (f === "integer") return v === null ? "—" : Math.round(v).toLocaleString();
+    return v === null ? "—" : String(v);
+  }
+
+  // profit-aware delta: for cost measures, down is good
+  const COST_KEYS = ["derivatives.mediaCostAmount", "derivatives.mediaCostPercentage", "sales.cogsAmount", "sales.returnsAmountPercentage", "sales.discountsAmount"];
+
+  function deltaHtml(key, changePct) {
+    if (changePct === null || changePct === undefined) return "";
+    const isCost = COST_KEYS.includes(key);
+    const good = isCost ? changePct < 0 : changePct > 0;
+    const cls = changePct === 0 ? "" : (good ? "delta-up" : "delta-down");
+    const arrow = changePct > 0 ? "▲" : (changePct < 0 ? "▼" : "•");
+    return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(changePct * 100).toFixed(1) + '%</span>';
+  }
+
+  /* ---------- response helpers ---------- */
+  function idxMap(cols) {
+    const m = {};
+    cols.forEach((c, i) => m[c] = i);
+    return m;
+  }
+
+  function isCompare(cols, key) {
+    return cols.includes(key + ".primary");
+  }
+
+  function getCell(row, im, key, mode) {
+    // mode: 'primary'|'secondary'|'change' ; returns number
+    if (im[key] !== undefined) return num(row[im[key]]);            // single period
+    const suf = mode === "secondary" ? ".secondary" : mode === "change" ? ".changePercent" : ".primary";
+    return im[key + suf] !== undefined ? num(row[im[key + suf]]) : null;
+  }
+
+  function cleanRows(cols, rows, catKey) {
+    const im = idxMap(cols);
+    return (rows || []).filter(r => {
+      const c = r[im[catKey]];
+      return c !== null && c !== undefined && c !== "" && !EXCLUDE.includes(c);
+    });
+  }
+
+  /* ---------- state ---------- */
+  let trendLoaded = false, chart = null;
+
+  /* ---------- KPI + bars + table (window-driven) ---------- */
+  async function loadWindow() {
+    if (!T_SESSION || !T_ANALYTICS) {
+      showError("Bark tools aren't configured for this board (missing config.tools.startSession / executeQuery).");
+      return;
+    }
+    const win = document.getElementById("win").value;
+    const cmp = document.getElementById("cmp").value;
+    showSkeleton();
+    const q = {
+      date: buildDate(win, cmp),
+      dimensions: [{key: "products.category"}],
+      measures: [
+        {key: "sales.netSalesAmount"},
+        {key: "derivatives.contributionMarginAmount"},
+        {key: "derivatives.contributionMarginPercentage"},
+        {key: "derivatives.mediaCostAmount"},
+        {key: "derivatives.profitOnAdSpend"},
+        {key: "derivatives.viewsConversionRate"},
+        {key: "sales.netSalesQuantity"}
+      ],
+      where: [{key: "products.category", operator: "excludes", value: EXCLUDE}],
+      order: [{key: "derivatives.contributionMarginAmount", direction: "desc"}],
+      totals: true
+    };
+    let res;
+    try {
+      res = await analytics(q, BOARD_NAME.toLowerCase() + " " + win);
+    } catch (e) {
+      showError(e.message);
+      return;
+    }
+
+    const cols = (res.data && res.data.columns) || [],
+      rows = cleanRows(cols, res.data && res.data.rows, "products.category"), tot = (res.data && res.data.totals) || [];
+    const im = idxMap(cols);
+    Object.assign(fmtCache, memberFmt(res.members));
+
+    const NS = "sales.netSalesAmount", CM = "derivatives.contributionMarginAmount",
+      CMP = "derivatives.contributionMarginPercentage", MED = "derivatives.mediaCostAmount",
+      POAS = "derivatives.profitOnAdSpend", CVR = "derivatives.viewsConversionRate",
+      QTY = "sales.netSalesQuantity";
+
+    // Compare mode is present only if the API actually returned .primary columns — not just because
+    // the control is set, so prior/delta stay hidden when the response is single-period.
+    const compareOn = isCompare(cols, CM);
+
+    const totNS = getCell(tot, im, NS, "primary"), totCM = getCell(tot, im, CM, "primary"),
+      totCMP = getCell(tot, im, CMP, "primary"), totMED = getCell(tot, im, MED, "primary");
+    const totNSprev = getCell(tot, im, NS, "secondary"), totCMprev = getCell(tot, im, CM, "secondary"),
+      totCMPprev = getCell(tot, im, CMP, "secondary"), totMEDprev = getCell(tot, im, MED, "secondary");
+    const totNSd = getCell(tot, im, NS, "change"), totCMd = getCell(tot, im, CM, "change"),
+      totCMPd = getCell(tot, im, CMP, "change"), totMEDd = getCell(tot, im, MED, "change");
+
+    // rank by CM primary — pack each measure into {now, prior, chg} so every table cell
+    // can stack now/prior/delta as rows in compare mode.
+    const trio = (r, key) => ({
+      now: getCell(r, im, key, "primary"),
+      prior: getCell(r, im, key, "secondary"),
+      chg: getCell(r, im, key, "change")
+    });
+    const ranked = rows.map(r => ({
+      name: r[im["products.category"]],
+      ns: trio(r, NS), cm: trio(r, CM), cmp: trio(r, CMP), med: trio(r, MED),
+      poas: trio(r, POAS), cvr: trio(r, CVR), qty: trio(r, QTY)
+    })).filter(x => x.cm.now !== null).sort((a, b) => b.cm.now - a.cm.now);
+
+    // headline
+    const top = ranked[0];
+    if (top && totCM) {
+      const share = Math.round((top.cm.now / totCM) * 100);
+      document.getElementById("headline").innerHTML =
+        escapeHtml(top.name) + ' carries <span class="fig">' + share + '%</span> of contribution margin — ' +
+        '<span class="fig">' + money(top.cm.now, true) + '</span> of the store\'s <span class="fig">' + money(totCM, true) + '</span> across ' + ranked.length + ' categories.';
+    } else if (totNS !== null || totCM !== null) {
+      document.getElementById("headline").textContent =
+        "From " + money(totNS, true) + " net sales to " + money(totCM, true) + " contribution margin.";
+    } else {
+      document.getElementById("headline").textContent = "No category data for this period.";
+    }
+
+    // KPIs
+    const kpiEl = document.getElementById("kpis");
+
+    function kpi(label, val, prev, chg, key) {
+      let d = "";
+      if (compareOn && chg !== null) {
+        d = '<span class="k-delta">' + deltaHtml(key, chg) + ' · from ' + (fmtCache[key] === "percent" ? pct(prev) : money(prev, true)) + '</span>';
+      }
+      return '<div class="kpi"><span class="k-label">' + label + '</span><span class="k-val tnum">' + val + '</span>' + d + '</div>';
+    }
+
+    kpiEl.innerHTML =
+      kpi("Net Sales", money(totNS, true), totNSprev, compareOn ? totNSd : null, NS) +
+      kpi("Contribution Margin", money(totCM, true), totCMprev, compareOn ? totCMd : null, CM) +
+      kpi("Contribution Margin %", pct(totCMP), totCMPprev, compareOn ? totCMPd : null, CMP) +
+      kpi("Media", money(totMED, true), totMEDprev, compareOn ? totMEDd : null, MED);
+
+    // ranked bars
+    const maxCM = Math.max.apply(null, ranked.map(x => Math.abs(x.cm.now)).concat([1]));
+    document.getElementById("rank-head").style.display = compareOn ? "grid" : "none";
+    document.getElementById("bars").innerHTML = ranked.length ? ranked.map(x => {
+      const w = Math.max(2, (Math.abs(x.cm.now) / maxCM) * 100);
+      const prior = compareOn ? money(x.cm.prior, true) : "";
+      const delta = compareOn ? deltaHtml(CM, x.cm.chg) : "";
+      return '<div class="bar-row">' +
+        '<div><div class="bar-name">' + escapeHtml(x.name) + '</div><div class="bar-sub">' + pct(x.cmp.now) + ' CM · ' + money(x.ns.now, true) + ' net</div></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + w + '%"></div></div>' +
+        '<div class="bar-now tnum">' + money(x.cm.now, true) + '</div>' +
+        '<div class="bar-prior tnum' + (compareOn ? '' : ' prior') + '" ' + (compareOn ? '' : 'style="display:none"') + '>' + prior + '</div>' +
+        '<div class="bar-delta tnum">' + delta + '</div>' +
+        '</div>';
+    }).join("") : '<p class="muted">No category data for this period.</p>';
+
+    // rank callout — biggest bleeder among real categories
+    const bleeders = ranked.filter(x => x.cm.now < 0).sort((a, b) => a.cm.now - b.cm.now);
+    const rc = document.getElementById("rank-callout");
+    if (bleeders.length) {
+      const b = bleeders[0];
+      rc.style.visibility = "visible";
+      rc.querySelector(".txt").innerHTML = "<b>" + escapeHtml(b.name) + "</b> is the one category running negative this window — " + money(b.cm.now, true) + " CM on " + money(b.ns.now, true) + " net sales, with " + money(b.med.now, true) + " of attributed media riding it. Worth checking stock and where that exposure is coming from.";
+    } else if (top) {
+      rc.style.visibility = "visible";
+      rc.querySelector(".txt").innerHTML = "Every category is contribution-positive this window — " + escapeHtml(top.name) + " leads at " + money(top.cm.now, true) + " CM.";
+    } else {
+      rc.style.visibility = "hidden";
+    }
+
+    // detail table — every measure cell stacks now / prior / delta as rows in compare mode.
+    // `good` sets the delta colour: cost measures (Media) read green when they fall.
+    function measureCell(v, fmt, good, nowCls) {
+      const nowHtml = '<div class="cnow tnum ' + (nowCls || "") + '">' + fmt(v.now) + '</div>';
+      if (!compareOn) return '<td>' + nowHtml + '</td>';
+      const flat = v.chg === null || v.chg === undefined || isNaN(v.chg) || v.chg === 0;
+      const dcls = flat ? "d-flat" : ((good ? v.chg > 0 : v.chg < 0) ? "d-up" : "d-down");
+      return '<td>' + nowHtml +
+        '<div class="cprior tnum">' + fmt(v.prior) + '</div>' +
+        '<div class="cdelta tnum ' + dcls + '">' + fmtDeltaPct(v.chg) + '</div></td>';
+    }
+
+    const th = '<thead><tr><th class="l">Category</th><th>Net Sales</th><th>CM</th>' +
+      '<th>CM %</th><th>Media</th><th>POAS</th><th>Views CVR</th><th>Net Qty</th></tr></thead>';
+    const trs = ranked.map(x => {
+      return '<tr><td class="l">' + escapeHtml(x.name) + '</td>' +
+        measureCell(x.ns, v => money(v, true), true) +
+        measureCell(x.cm, v => money(v, true), true, x.cm.now < 0 ? "neg" : "") +
+        measureCell(x.cmp, pct, true) +
+        measureCell(x.med, v => money(v, true), false) +
+        measureCell(x.poas, dec, true) +
+        measureCell(x.cvr, pct, true) +
+        measureCell(x.qty, intFmt, true) +
+        '</tr>';
+    }).join("");
+    document.getElementById("tblwrap").innerHTML = ranked.length ? '<table class="tbl">' + th + '<tbody>' + trs + '</tbody></table>' : '<p class="muted">No category data for this period.</p>';
+
+    // stamp + foot
+    const now = new Date();
+    const dOpts = {month: "short", day: "numeric"}, tOpts = {hour: "numeric", minute: "2-digit"};
+    if (TZ) {
+      dOpts.timeZone = TZ;
+      tOpts.timeZone = TZ;
+    }
+    document.getElementById("stamp").textContent = "Data updated " + now.toLocaleDateString(undefined, dOpts)
+      + ", " + now.toLocaleTimeString(undefined, tOpts);
+    document.getElementById("foot").textContent = "Service and non-merchandise lines (gift cards, returns assurance, delivery guarantee, etc.) excluded. Totals read from Bark's totals row. " + PRESETS[win].label + (compareOn ? (cmp === "year" ? " vs same period last year" : " vs preceding period") : "") + ".";
+
+    if (!trendLoaded) loadTrend();
+  }
+
+  /* ---------- trend (fixed 12-month monthly) ---------- */
+  async function loadTrend() {
+    const q = {
+      date: {from: "now-12M/M", to: "now/d-1s"},
+      dimensions: [{key: "date", resolution: "month"}, {key: "products.category"}],
+      measures: [{key: "derivatives.contributionMarginAmount"}, {key: "sales.netSalesAmount"}],
+      where: [{key: "products.category", operator: "excludes", value: EXCLUDE}],
+      order: [{key: "date", direction: "asc"}],
+      totals: true
+    };
+    let res;
+    try {
+      res = await analytics(q, "category trend 12m");
+    } catch (e) {
+      console.warn("trend failed", e.message);
+      chartMsg("Couldn't load the trend chart.");
+      return;
+    }
+    trendLoaded = true;
+    const cols = (res.data && res.data.columns) || [], im = idxMap(cols);
+    const DK = "date", CAT = "products.category", CM = "derivatives.contributionMarginAmount";
+    const rows = ((res.data && res.data.rows) || []).filter(r => {
+      const c = r[im[CAT]];
+      return c && !EXCLUDE.includes(c);
+    });
+    if (!rows.length) {
+      chartMsg("No trend data for the trailing 12 months.");
+      return;
+    }
+
+    // month axis
+    const months = [...new Set(rows.map(r => r[im[DK]]))].sort();
+    const mLabel = m => {
+      const d = new Date(m);
+      return d.toLocaleDateString(undefined, {month: "short", year: "2-digit", timeZone: "UTC"});
+    };
+
+    // per category totals to pick top 5
+    const catTot = {};
+    rows.forEach(r => {
+      const c = r[im[CAT]];
+      catTot[c] = (catTot[c] || 0) + (num(r[im[CM]]) || 0);
+    });
+    const top = Object.entries(catTot).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
+
+    // series
+    const series = {};
+    top.forEach(c => series[c] = Object.fromEntries(months.map(m => [m, 0])));
+    rows.forEach(r => {
+      const c = r[im[CAT]];
+      if (series[c]) series[c][r[im[DK]]] = num(r[im[CM]]) || 0;
+    });
+
+    const palette = ["#AD1A72", "#252751", "#2F6E4F", "#C88A17", "#3E7CB1"];
+    const datasets = top.map((c, i) => ({
+      label: c,
+      data: months.map(m => series[c][m]),
+      borderColor: palette[i % palette.length],
+      backgroundColor: palette[i % palette.length],
+      borderWidth: i === 0 ? 3 : 2,
+      tension: .3, pointRadius: 2, pointHoverRadius: 4, fill: false
+    }));
+
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    // restore the canvas (the skeleton replaced it) before drawing
+    const wrap = document.getElementById("chartWrap");
+    if (wrap && !document.getElementById("trend")) wrap.innerHTML = '<canvas id="trend"></canvas>';
+    const ctx = document.getElementById("trend").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {labels: months.map(mLabel), datasets},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: {mode: "index", intersect: false},
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {boxWidth: 12, boxHeight: 12, usePointStyle: true, font: {size: 12}, color: "#1A1714"}
+          },
+          tooltip: {callbacks: {label: c => c.dataset.label + ": " + money(c.parsed.y, true)}}
+        },
+        scales: {
+          x: {grid: {display: false}, ticks: {color: "#6B635B", font: {size: 11}}},
+          y: {grid: {color: "#EAE7E1"}, ticks: {color: "#6B635B", font: {size: 11}, callback: v => money(v, true)}}
+        }
+      }
+    });
+
+    // trend callout — computed from data; only claim seasonality when the peak/trough ratio warrants it
+    const leader = top[0];
+    if (!leader) {
+      return;
+    }
+    const lvals = months.map(m => series[leader][m]);
+    let peakI = 0;
+    lvals.forEach((v, i) => {
+      if (v > lvals[peakI]) peakI = i;
+    });
+    const positives = lvals.filter(v => v > 0);
+    const troughVal = positives.length ? Math.min.apply(null, positives) : Math.min.apply(null, lvals);
+    const ratio = troughVal > 0 ? (lvals[peakI] / troughVal) : null;
+    const tc = document.getElementById("trend-callout");
+    tc.style.visibility = "visible";
+    const eLeader = escapeHtml(leader);
+    let msg = "<b>" + eLeader + "</b> leads contribution margin over the trailing year — peaking at " + money(lvals[peakI], true) + " in " + mLabel(months[peakI]) + ".";
+    if (ratio !== null && ratio >= 3) {
+      msg = "<b>" + eLeader + "</b> drives a strongly seasonal shape — CM peaks at " + money(lvals[peakI], true) + " in " + mLabel(months[peakI]) +
+        ", about <b>" + ratio.toFixed(1) + "×</b> its off-season trough. Read this year-on-year, not month-to-month.";
+    } else if (ratio !== null && ratio >= 1.6) {
+      msg = "<b>" + eLeader + "</b> leads and shows some seasonality — CM peaks at " + money(lvals[peakI], true) + " in " + mLabel(months[peakI]) +
+        ", about <b>" + ratio.toFixed(1) + "×</b> its softer months.";
+    }
+    tc.querySelector(".txt").innerHTML = msg;
+  }
+
+  /* ---------- skeleton / error ---------- */
+  function skBars(n) {
+    return Array.from({length: n}, () =>
+      '<div class="sk-bar">' +
+      '<div class="sk" style="height:30px"></div>' +
+      '<div class="sk" style="height:22px"></div>' +
+      '<div class="sk" style="height:14px;width:70%;justify-self:end"></div>' +
+      '<div class="sk" style="height:14px;width:70%;justify-self:end"></div>' +
+      '<div class="sk" style="height:14px;width:60%;justify-self:end"></div>' +
+      '</div>'
+    ).join("");
+  }
+
+  function skTable(n) {
+    const C = 8;
+    const cell = (i, h) => '<div class="sk" style="height:' + h + 'px;width:' + (i === 0 ? '50%' : '60%') + ';justify-self:' + (i === 0 ? 'start' : 'end') + '"></div>';
+    const thead = '<div class="sk-thead">' + Array.from({length: C}, (_, i) => cell(i, 10)).join("") + '</div>';
+    const rows = Array.from({length: n}, () => '<div class="sk-trow">' + Array.from({length: C}, (_, i) => cell(i, 13)).join("") + '</div>').join("");
+    return thead + rows;
+  }
+
+  function skChart() {
+    const chips = Array.from({length: 5}, () => '<div class="sk sk-chip"></div>').join("");
+    const grids = [16, 36, 56, 76].map(b => '<div class="sk-grid" style="bottom:' + b + '%"></div>').join("");
+    return '<div class="sk-chart-legend">' + chips + '</div>' +
+      '<div class="sk-plot">' + grids + '<div class="sk sk-area"></div></div>';
+  }
+
+  function showChartSkeleton() {
+    const w = document.getElementById("chartWrap");
+    if (w) w.innerHTML = skChart();
+  }
+
+  function chartMsg(msg) {
+    const w = document.getElementById("chartWrap");
+    if (w) w.innerHTML = '<div class="muted" style="display:flex;align-items:center;justify-content:center;height:100%">' + msg + '</div>';
+  }
+
+  function showSkeleton() {
+    document.getElementById("headline").innerHTML = '<span class="sk sk-headline" style="display:inline-block;width:70%"></span>';
+    document.getElementById("kpis").innerHTML = Array(4).fill('<div class="sk sk-kpi"></div>').join("");
+    const rc = document.getElementById("rank-callout");
+    if (rc) rc.style.visibility = "hidden";
+    document.getElementById("rank-head").style.display = "none";
+    document.getElementById("bars").innerHTML = skBars(6);
+    document.getElementById("tblwrap").innerHTML = skTable(6);
+  }
+
+  function showError(msg) {
+    document.getElementById("kpis").innerHTML = '<div class="err" style="grid-column:1/-1">Couldn\'t load Bark data: ' + msg + '</div>';
+    document.getElementById("bars").innerHTML = "";
+    document.getElementById("tblwrap").innerHTML = "";
+    document.getElementById("headline").textContent = BOARD_NAME;
+  }
+
+  /* ---------- wire ---------- */
+  document.getElementById("win").addEventListener("change", loadWindow);
+  document.getElementById("cmp").addEventListener("change", loadWindow);
+  showChartSkeleton();
+  loadWindow();
+</script>
+</body>
+</html>

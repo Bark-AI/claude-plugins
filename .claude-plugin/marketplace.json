@@ -14,7 +14,7 @@
       "name": "bark-cowork",
       "source": "./plugins/bark-cowork",
       "description": "The Bark AI toolkit for Claude Cowork — connect your store's Bark data and build branded, interactive artifacts, starting with live dashboards.",
-      "version": "0.0.7",
+      "version": "0.0.8",
       "category": "ecommerce",
       "keywords": [
         "bark-ai",

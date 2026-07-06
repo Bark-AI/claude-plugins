@@ -1,9 +1,0 @@
-[install]
-# Save exact versions on `bun add` (matches the frozen pins in package.json).
-exact = true
-
-# Supply-chain guard: only install package versions published at least 14 days ago.
-minimumReleaseAge = 1209600  # seconds (14 days)
-
-# Optionally exempt trusted packages from the age gate:
-minimumReleaseAgeExcludes = ["typescript", "@types/bun", "@types/react", "@types/react-dom"]

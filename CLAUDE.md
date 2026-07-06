@@ -12,11 +12,14 @@ customers can install the plugins (see `LICENSE`).
 ## Layout
 
 - `.claude-plugin/marketplace.json` — marketplace catalog (lists plugins).
-- `plugins/bark-cowork/` — the plugin: Bark MCP connector (`.mcp.json`) + `skills/design-dashboard/`
-  (build a branded live dashboard as a Cowork artifact).
-- `apps/dashboard-app/` — **Bun + React** app (json-render + streamdown) that builds the dashboard
-  template the skill uses. Build tooling only; not shipped in the plugin.
+- `plugins/bark-cowork/` — the plugin: Bark MCP connector (`.mcp.json`) + the `design-dashboard` skill.
+- `plugins/bark-cowork/skills/design-dashboard/` — `SKILL.md` (how to design Bark dashboards in Cowork),
+  `templates/` (prepackaged dashboard HTMLs, each with an inlined config block), and
+  `scripts/copy-template.mjs`.
 - `.github/workflows/validate.yml` — CI runs `claude plugin validate .` on Node 24.
+
+An exploratory **Bun + React (json-render)** renderer — a possible v1 direction — lives on the
+**`v1-alpha`** branch, not `main`.
 
 ## Hard rules
 
@@ -41,21 +44,18 @@ customers can install the plugins (see `LICENSE`).
 
 ## design-dashboard skill
 
-- Flow: write a spec (JSON) → inject into the bundled template → publish as a Cowork live artifact via
-  `create_artifact` (which points at a file, so the template is copied, not re-emitted).
-- Artifact **name** `Bark · <Board> — <Store>` (store last); **id** kebab slug `board-then-store`,
-  with `&` → `n`/`and` (e.g. `profit-loss-acme-hats`).
-- Reference bundled scripts with **`${CLAUDE_SKILL_DIR}`**, not `${CLAUDE_PLUGIN_ROOT}` (the latter is
-  a host path absent in the Cowork bash sandbox). Keep a `find /sessions … -print -quit` fallback.
-
-## dashboard-app (Bun)
-
-- **Pure Bun.** Install: `bun install`. Build: `bun run build` (produces the single self-contained
-  HTML template and copies it into the skill).
-- **Exact-frozen versions** in `package.json` (no carets). `bunfig.toml` enforces a 14-day
-  supply-chain age gate (`minimumReleaseAge`, in seconds), excluding `typescript` / `@types`.
-- Output is a **single self-contained HTML** (`bun build --compile --target=browser`) with everything
-  inlined. At runtime the Cowork sandbox only allows Chart.js/Grid.js/Mermaid from CDN — but bundling
-  everything avoids relying on that.
-- For the json-render API, use the **`json-renderer-core`** and **`json-renderer-react`** skills
-  rather than guessing.
+- **Two paths:** (a) **copy a matching prepackaged template** (`templates/*.html`), injecting the store
+  config via `scripts/copy-template.mjs`; or (b) **design a custom board** following the design system in
+  `SKILL.md`, using the templates as style examples. Then publish as a Cowork live artifact via
+  `create_artifact` (which points at a file, so the built HTML is copied, not re-emitted).
+- **Config** (`storeId, storeName, currencyCode, timezone, boardName`) is passed to `copy-template.mjs`
+  as an **inline JSON string** — never a `config.json` file (don't litter the merchant's working folder).
+  The script replaces the template's inlined `<script id="bark-dashboard-config">` block; the board reads
+  it at load to query/format Bark.
+- Templates are **dual-purpose**: copyable ready boards *and* the style reference for custom builds.
+  Roadmap boards: P&L, Heroes & Bleeders, Category Analysis, POAS & Channels.
+- Artifact **name** `Bark · <Board> — <Store>` (store last); **id** kebab slug `board-then-store`, with
+  `&` → `n`/`and` (e.g. `profit-loss-acme-hats`).
+- Reference bundled scripts/templates with **`${CLAUDE_SKILL_DIR}`**, not `${CLAUDE_PLUGIN_ROOT}` (the
+  latter is a host path absent in the Cowork bash sandbox). Keep a scoped `find /sessions … -print -quit`
+  fallback (never `find /`).

@@ -7,3 +7,8 @@ minimumReleaseAge = 1209600  # seconds (14 days)
 
 # Optionally exempt trusted packages from the age gate:
 minimumReleaseAgeExcludes = ["typescript", "@types/bun", "@types/react", "@types/react-dom"]
+
+# Dev server (`bun run dev`): compile Tailwind on the fly. The production build
+# (scripts/build-renderer.ts) runs the same plugin via Bun.build.
+[serve.static]
+plugins = ["bun-plugin-tailwind"]

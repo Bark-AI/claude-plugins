@@ -12,7 +12,8 @@
     "noEmit": true,
     "types": ["bun"],
     "paths": {
-      "@catalog": ["./src/catalog/catalog.ts"]
+      "@catalog": ["./src/catalog/catalog.ts"],
+      "@/*": ["./src/renderer/*"]
     }
   },
   "include": ["src", "scripts"]

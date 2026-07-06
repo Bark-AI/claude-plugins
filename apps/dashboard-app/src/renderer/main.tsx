@@ -1,19 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "./globals.css";
 import { compileSpecStream, type Spec } from "@json-render/core";
-import { defineRegistry, JSONUIProvider, Renderer } from "@json-render/react";
-import { Streamdown } from "streamdown";
-import { catalog } from "@catalog";
+import { JSONUIProvider, Renderer } from "@json-render/react";
+import { registry } from "./registry";
 
-// Map each catalog component to its React implementation.
-const { registry } = defineRegistry(catalog, {
-  components: {
-    Markdown: ({ props }) => <Streamdown>{props.content}</Streamdown>,
-  },
-});
-
-// Read the spec embedded in the page (inject-spec fills #dashboard-spec at
-// publish time; falls back to a placeholder for `bun dev`).
 // Compile the JSONL patch stream embedded at build time (build.mjs fills #dashboard-spec)
 // into a spec. Falls back to a placeholder for `bun dev`, before any spec is injected.
 function readSpec(): Spec {

@@ -66,17 +66,20 @@ Every board — copied or custom — is bound to a store by an inlined **config 
 <script type="application/json" id="bark-dashboard-config">{ … }</script>
 ```
 
-Call `bark_start_session` to get the **store id** and store metadata (name, currency, timezone) — that,
-plus the board label, is the whole config. To copy a template, pass these as an **inline JSON string**
-to the copy script (nothing is written to the merchant's working folder):
+Call `bark_start_session` to get the **store id** and store metadata (name, currency, timezone); pair
+that with the board label and this session's **fully-qualified Bark tool names**. That's the whole
+config. To copy a template, pass it as an **inline JSON string** to the copy script (nothing is written
+to the merchant's working folder):
 
-| Field          | What it is                                                    |
-|----------------|--------------------------------------------------------------|
-| `storeId`      | the Bark store id (from `bark_start_session`)                 |
-| `storeName`    | the store's official name (e.g. "Acme Hats")                 |
-| `currencyCode` | ISO currency code (e.g. "USD", "GBP")                        |
-| `timezone`     | IANA timezone (e.g. "America/New_York")                     |
-| `boardName`    | the board label (e.g. "Profit & Loss", "Category Analysis")  |
+| Field                | What it is                                                                   |
+|----------------------|------------------------------------------------------------------------------|
+| `storeId`            | the Bark store id (from `bark_start_session`)                                 |
+| `storeName`          | the store's official name (e.g. "Acme Hats")                                |
+| `currencyCode`       | ISO currency code (e.g. "USD", "GBP")                                        |
+| `timezone`           | IANA timezone (e.g. "America/New_York")                                     |
+| `boardName`          | the board label (e.g. "Profit & Loss", "Category Analysis")                  |
+| `tools.startSession` | fully-qualified `bark_start_session` name (`mcp__<hash>__bark_start_session`) |
+| `tools.executeQuery` | fully-qualified `bark_get_store_analytics` name                              |
 
 ```json
 {
@@ -84,16 +87,23 @@ to the copy script (nothing is written to the merchant's working folder):
   "storeName": "Acme Hats",
   "currencyCode": "USD",
   "timezone": "America/New_York",
-  "boardName": "Profit & Loss"
+  "boardName": "Profit & Loss",
+  "tools": {
+    "startSession": "mcp__<hash>__bark_start_session",
+    "executeQuery": "mcp__<hash>__bark_get_store_analytics"
+  }
 }
 ```
 
-The board reads `storeId` / `currencyCode` / `timezone` at load to query and format, and shows
-`storeName` / `boardName` in the header. A custom board embeds the **same** config block.
+The board reads `storeId` / `currencyCode` / `timezone` at load to query and format, shows `storeName` /
+`boardName` in the header, and calls Bark through `tools.*` (see
+[Resolve the Bark tool names](#resolve-the-bark-tool-names)). A custom board embeds the **same** config
+block.
 
-That session call is all the **template path** needs before publishing — a template carries its own
-queries, so no schema or field discovery. The heavier setup (tool names, schema, real numbers) is only
-for a **custom** board (§4).
+Tool names embed an install-specific hash — **discover this session's fully-qualified names at runtime,
+never hardcode them.** That, plus the session, is all the **template path** needs before publishing — a
+template carries its own queries, so no schema or field discovery (that heavier setup is **custom** only,
+§4).
 
 ## 3. Copy a matching template
 
@@ -107,7 +117,7 @@ When a template fits the request, copy it — don't re-author it.
    SKILL="${CLAUDE_SKILL_DIR:-}"
    [ -f "$SKILL/scripts/copy-template.mjs" ] || SKILL="$(find /sessions ~/.claude -type d -path '*/skills/design-dashboard' -print -quit 2>/dev/null)"
    node "$SKILL/scripts/copy-template.mjs" \
-     '{"storeId":123,"storeName":"Acme Hats","currencyCode":"USD","timezone":"America/New_York","boardName":"Profit & Loss"}' \
+     '{"storeId":123,"storeName":"Acme Hats","currencyCode":"USD","timezone":"America/New_York","boardName":"Profit & Loss","tools":{"startSession":"mcp__<hash>__bark_start_session","executeQuery":"mcp__<hash>__bark_get_store_analytics"}}' \
      "$SKILL/templates/profit-loss.template.html" profit-loss-acme-hats.html
    ```
    **Single-quote the JSON** so the shell passes it intact (it contains spaces and `&`). The scoped
@@ -125,9 +135,10 @@ palette, controls, and block styling. Keep the same config block and the same Ba
 **Set up first (custom only).** The Bark MCP prefix is install-specific and the field set is
 store-specific — discover both at runtime, never hardcode from memory:
 
-- The board **resolves the Bark tool names at runtime** — don't hardcode them into the page (see
-  [Resolve the Bark tool names at load](#resolve-the-bark-tool-names-at-load)). You still list the
-  fully-qualified names in `create_artifact`'s `mcp_tools` at publish so the board is granted access.
+- The board reads the Bark tool names from its **injected `config.tools`** — don't hardcode them into
+  the page (see [Resolve the Bark tool names](#resolve-the-bark-tool-names)). Resolve this session's
+  fully-qualified names, pass them in the config, and also list them in `create_artifact`'s `mcp_tools`
+  at publish so the board is granted access.
 - Read `bark://docs/query-reference` once and `bark://stores/{storeId}/cubes/sales/members` once for the
   live measure/dimension keys.
 - **Look at the store's real numbers first** (the main P&L query + the category breakdown) so any
@@ -162,34 +173,27 @@ The board calls `bark_get_store_analytics` with `{ subject, query, _annotations 
   `{ key: "date", resolution: "day"|"week"|"month" }`. Always set `totals: true`.
 - `_annotations`: `{ sessionId, activeTurn: { idx, user, context } }` — required on every call.
 
-### Resolve the Bark tool names at load
+### Resolve the Bark tool names
 
 A Bark tool name is `mcp__<install-hash>__<tool>` and the hash is **install-specific** — a name that
-works on the machine that authored a board is wrong on every other install. So the board must **never
-hardcode** tool names; it resolves them once at load by listing the host's tools and matching the stable
-suffix (`bark_start_session`, `bark_get_store_analytics`):
+works on the machine that authored a board is wrong on every other install, and a real hash must never
+ship in this public repo. The board must **never hardcode** tool names. The host exposes **no runtime
+tool-listing API** to a live artifact, so the board reads them from the **injected config** — you resolve
+this session's fully-qualified names and pass them in `config.tools` (Step 2), and the page reads them:
 
 ```js
-let BARK_START = "", BARK_QUERY = "";
-async function ensureTools() {
-  const c = window.cowork || {};
-  const list = (typeof c.listMcpTools === "function" && await c.listMcpTools())
-            || (typeof c.getMcpTools === "function" && await c.getMcpTools())
-            || c.mcpTools || c.tools || [];
-  const names = list.map(t => (typeof t === "string" ? t : t.name || t.id || "")).filter(Boolean);
-  BARK_START = names.find(n => n.endsWith("bark_start_session")) || "";
-  BARK_QUERY = names.find(n => n.endsWith("bark_get_store_analytics")) || "";
-}
+const BARK_START = (CFG.tools && CFG.tools.startSession) || "";
+const BARK_QUERY = (CFG.tools && CFG.tools.executeQuery) || "";
 ```
 
-If neither resolves, show the error state — don't call with an empty name. (At **publish** you still
-list the fully-qualified names in `create_artifact`'s `mcp_tools` to *grant* the board access; the code
-above is how the page *finds* them at runtime.)
+If either is empty, show the error state — don't call with an empty name. At **publish** you also list
+these same fully-qualified names in `create_artifact`'s `mcp_tools` to *grant* the board access.
 
 ### Calling Bark from inside the artifact (the Cowork bridge)
 
-The load sequence is **`ensureTools()` → `bark_start_session` (mint a session) → `bark_get_store_analytics`
-(query)**, re-minting the session if a later call returns a session error. Each call goes through
+The load sequence is **read `config.tools` → `bark_start_session` (mint a session) →
+`bark_get_store_analytics` (query)**, re-minting the session if a later call returns a session error.
+Each call goes through
 `window.cowork.callMcpTool(name, args)` and resolves to a result object
 `{ content, structuredContent, isError }` — it does **not** throw on a tool error. Four rules, in order,
 prevent the failures this bridge invites (each has bitten a real build):

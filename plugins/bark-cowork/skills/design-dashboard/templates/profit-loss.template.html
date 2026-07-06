@@ -10,7 +10,8 @@
             "storeId": 0,
             "storeName": "Acme Hats",
             "currencyCode": "USD",
-            "timezone": "America/New_York"
+            "timezone": "America/New_York",
+            "tools": { "startSession": "", "executeQuery": "" }
         }
     </script>
     <style>
@@ -590,14 +591,6 @@
 </div>
 
 <script>
-  // Bark tool names embed an install-specific server hash, so they can't be hardcoded in a portable
-  // template (and a real hash must never ship in this public repo). We resolve them dynamically at
-  // load from the host's tool listing, matching the stable suffix below — no tool names in config.
-  const START_SUFFIX = "bark_start_session";
-  const QUERY_SUFFIX = "bark_get_store_analytics";
-  let BARK_START = "";
-  let BARK_QUERY = "";
-
   // ---- Config (populated by copy-template.mjs) ----
   function loadConfig() {
     try {
@@ -608,6 +601,13 @@
   }
 
   const CFG = loadConfig();
+
+  // Bark tool names embed an install-specific server hash, so they can't be hardcoded in a portable
+  // template (and a real hash must never ship in this public repo). The skill resolves this session's
+  // fully-qualified names and injects them into config.tools.
+  const BARK_START = (CFG.tools && CFG.tools.startSession) || "";
+  const BARK_QUERY = (CFG.tools && CFG.tools.executeQuery) || "";
+
   const STORE_ID = Number(CFG.storeId);
   const CUR_CODE = CFG.currencyCode || "USD";
   const TZ = CFG.timezone || undefined;
@@ -641,28 +641,6 @@
   })();
 
   let SESSION = null;
-
-  // Resolve the Bark tool names for THIS install at runtime, by matching the stable suffix in the
-  // host's tool listing. Nothing about tools is kept in config. Runs once, memoized.
-  let TOOLS_RESOLVED = false;
-  async function ensureTools() {
-    if (TOOLS_RESOLVED) return;
-    try {
-      const c = window.cowork || {};
-      let list = null;
-      if (typeof c.listMcpTools === "function") list = await c.listMcpTools();
-      else if (typeof c.getMcpTools === "function") list = await c.getMcpTools();
-      else if (Array.isArray(c.mcpTools)) list = c.mcpTools;
-      else if (Array.isArray(c.tools)) list = c.tools;
-      if (list && list.length) {
-        const names = list.map(t => (typeof t === "string" ? t : (t && (t.name || t.id)) || "")).filter(Boolean);
-        const start = names.find(n => n.endsWith(START_SUFFIX));
-        const query = names.find(n => n.endsWith(QUERY_SUFFIX));
-        if (start && query) { BARK_START = start; BARK_QUERY = query; }
-      }
-    } catch (e) { /* leave unresolved; render() guards */ }
-    TOOLS_RESOLVED = true;
-  }
 
   async function callBark(name, args) {
     const r = await window.cowork.callMcpTool(name, args);
@@ -862,9 +840,8 @@
     ].map(k => ({key: k}));
 
     try {
-      await ensureTools();
       if (!BARK_START || !BARK_QUERY) {
-        showError("Couldn't resolve the Bark tools for this session — none were injected into the config and the host exposed no tool list.");
+        showError("Bark tools aren't configured for this board (missing config.tools.startSession / executeQuery).");
         return;
       }
       await getSession();

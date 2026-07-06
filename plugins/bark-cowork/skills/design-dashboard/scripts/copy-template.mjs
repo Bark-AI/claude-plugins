@@ -6,7 +6,10 @@
 //   node copy-template.mjs '<config-json>' <template.html> <output.html>
 //
 // - <config-json>   store config as an INLINE JSON string (single-quote it in the shell):
-//                   { storeId, storeName, currencyCode, timezone, boardName }
+//                   { boardName, storeId, storeName, currencyCode, timezone,
+//                     tools: { startSession, executeQuery } }
+//                   tools.* are the fully-qualified Bark tool names for this session
+//                   (mcp__<hash>__bark_start_session / mcp__<hash>__bark_get_store_analytics).
 // - <template.html> a prepackaged template from this skill's templates/ dir
 // - <output.html>   where to write the finished dashboard
 //
@@ -40,6 +43,9 @@ try {
 }
 const missing = REQUIRED.filter((k) => config[k] === undefined || config[k] === null || config[k] === "");
 if (missing.length) fail(`config is missing required field(s): ${missing.join(", ")}`);
+if (!config.tools || !config.tools.startSession || !config.tools.executeQuery) {
+  fail("config.tools.startSession and config.tools.executeQuery are required — the fully-qualified Bark tool names for this session.");
+}
 
 // Read the template.
 let template;

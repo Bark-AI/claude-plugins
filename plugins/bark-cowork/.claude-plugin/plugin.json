@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "bark-cowork",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "The Bark AI toolkit for Claude Cowork — connect your store's Bark data and build branded, interactive artifacts, starting with live dashboards.",
   "author": {
     "name": "Bark AI",

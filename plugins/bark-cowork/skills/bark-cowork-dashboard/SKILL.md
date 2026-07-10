@@ -1,5 +1,5 @@
 ---
-name: design-dashboard
+name: bark-cowork-dashboard
 description: Design a branded, live Bark dashboard in Claude Cowork — a persisted board (date-range + compare controls, KPI cards, ranked widgets) that re-pulls fresh Bark data every time the merchant opens it. Either COPY a matching prepackaged template (fast) or DESIGN a custom board following the design system here, using the templates as style examples; then publish it as a Cowork live artifact. Use ONLY in a Claude Cowork session, and ONLY when the merchant explicitly asks to create, build, make, or set up a dashboard / board / live view. Do NOT use to ANSWER a question or run analysis — answer those directly, then you may OFFER to build a board. Do NOT use for inline branded panels (Ask Bark, Bark Brief, Finding panels) — that is panel_rendering.
 ---
 
@@ -115,7 +115,7 @@ When a template fits the request, copy it — don't re-author it.
    `/sessions/*/mnt/.remote-plugins/*/`), so resolve the skill dir with a fallback, then run:
    ```bash
    SKILL="${CLAUDE_SKILL_DIR:-}"
-   [ -f "$SKILL/scripts/copy-template.mjs" ] || SKILL="$(find /sessions ~/.claude -type d -path '*/skills/design-dashboard' -print -quit 2>/dev/null)"
+   [ -f "$SKILL/scripts/copy-template.mjs" ] || SKILL="$(find /sessions ~/.claude -type d -path '*/skills/bark-cowork-dashboard' -print -quit 2>/dev/null)"
    node "$SKILL/scripts/copy-template.mjs" \
      '{"storeId":123,"storeName":"Acme Hats","currencyCode":"USD","timezone":"America/New_York","boardName":"Profit & Loss","tools":{"startSession":"mcp__<hash>__bark_start_session","executeQuery":"mcp__<hash>__bark_get_store_analytics"}}' \
      "$SKILL/templates/profit-loss.template.html" profit-loss-acme-hats.html

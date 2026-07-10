@@ -6,7 +6,7 @@
     "url": "https://bark-ai.com"
   },
   "metadata": {
-    "description": "Plugins that help Bark AI users get more out of Bark inside Claude Web and Claude Cowork.",
+    "description": "Plugins that help Bark AI users get more out of Bark inside Claude Web, Claude Cowork, and Claude Code.",
     "version": "0.0.2"
   },
   "plugins": [
@@ -22,6 +22,33 @@
         "cowork",
         "dashboard",
         "live artifact",
+        "shopify",
+        "amazon",
+        "magento",
+        "adobe commerce",
+        "ecommerce",
+        "dtc",
+        "profit",
+        "analytics",
+        "marketing",
+        "profit intelligence"
+      ]
+    },
+    {
+      "name": "bark-claude-code",
+      "source": "./plugins/bark-claude-code",
+      "description": "The Bark AI toolkit for Claude Code — connect your store's Bark data and build live, deployable dashboards you host yourself on any static web host.",
+      "version": "0.0.1",
+      "category": "ecommerce",
+      "keywords": [
+        "bark-ai",
+        "claude",
+        "claude code",
+        "dashboard",
+        "deployable",
+        "static site",
+        "oauth",
+        "mcp",
         "shopify",
         "amazon",
         "magento",

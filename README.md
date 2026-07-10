@@ -14,7 +14,7 @@ business questions — what's profitable, what to discount, where to spend.
 ## Available plugins
 
 - **[`bark-cowork`](./plugins/bark-cowork)** — the Bark AI toolkit for Claude Cowork: the Bark
-  MCP connector plus a `design-dashboard` skill for building branded, live dashboards.
+  MCP connector plus a `bark-cowork-dashboard` skill for building branded, live dashboards.
 
 ## Install
 
@@ -23,7 +23,7 @@ This repository is a **Claude plugin marketplace**. To use it:
 1. In Claude Cowork, add this marketplace by its repository URL.
 2. Browse the available plugins and install **`bark-cowork`**.
 3. Authenticate the **Bark AI** connector with your Bark account when prompted.
-4. In Cowork, ask *"Build me a dashboard for my store"* — the `design-dashboard` skill
+4. In Cowork, ask *"Build me a dashboard for my store"* — the `bark-cowork-dashboard` skill
    creates a branded live artifact that re-pulls fresh Bark data.
 
 The marketplace manifest lives at [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json).
@@ -41,7 +41,7 @@ The marketplace manifest lives at [`.claude-plugin/marketplace.json`](./.claude-
 │       ├── .mcp.json                 # Bark MCP connector config
 │       ├── README.md
 │       └── skills/
-│           └── design-dashboard/     # Build a Bark dashboard as a live artifact
+│           └── bark-cowork-dashboard/     # Build a Bark dashboard as a live artifact
 │               ├── SKILL.md          # Skill: copy template → set header → publish
 │               └── templates/
 │                   └── dashboard.html  # Branded dashboard template

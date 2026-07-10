@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bark · Profit &amp; Loss</title>
+
+    <!--
+      Store + board config for THIS deployment. A deployed
+      dashboard has no injected config or tools — it talks to Bark's MCP server
+      (https://app.bark-ai.com/mcp) directly, authenticating with its own OAuth. So this block
+      carries only the store identity; the Bark endpoint is fixed below in BARK.
+    -->
+    <script type="application/json" id="bark-dashboard-config">
+        {
+            "boardName": "Profit & Loss",
+            "storeId": 0,
+            "storeName": "Acme Hats",
+            "currencyCode": "USD",
+            "timezone": "America/New_York"
+        }
+    </script>
+    <style>
+        :root {
+            color-scheme: light;
+            --page: #FFFFFF;
+            --block: #F7F6F3;
+            --ink: #1A1714;
+            --ink-soft: #6B635B;
+            --hair: #EAE7E1;
+            --accent: #AD1A72;
+            --accent-tint: #F0E9EE;
+            --up: #2F6E4F;
+            --down: #C0392B;
+            --indigo: #252751;
+            --spark: #EA43E2;
+            --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--page);
+            color: var(--ink);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 32px 64px
+        }
+
+        .tnum {
+            font-variant-numeric: tabular-nums
+        }
+
+        /* Header */
+        header.top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--hair)
+        }
+
+        .lockup {
+            display: flex;
+            align-items: center;
+            gap: 0
+        }
+
+        .wordmark {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--indigo);
+            letter-spacing: -.01em
+        }
+
+        .spark {
+            font-size: 16px;
+            color: var(--spark);
+            margin-left: 4px;
+            align-self: flex-start;
+            line-height: 1
+        }
+
+        .vrule {
+            width: 1px;
+            height: 22px;
+            background: var(--hair);
+            margin: 0 14px
+        }
+
+        .storeblock {
+            display: flex;
+            flex-direction: column;
+            justify-content: center
+        }
+
+        .storename {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.2
+        }
+
+        .boardlabel {
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-top: 2px
+        }
+
+        .stampwrap {
+            text-align: right
+        }
+
+        .stamp {
+            font-size: 13px;
+            color: var(--ink-soft);
+            white-space: nowrap
+        }
+
+        .disconnect {
+            font-size: 12px;
+            color: var(--ink-soft);
+            text-decoration: none;
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 4px;
+            font-family: var(--sans)
+        }
+
+        .disconnect:hover {
+            color: var(--accent)
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px
+        }
+
+        .ctrl {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .ctrl label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        .ctrl select {
+            font-family: var(--sans);
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--page);
+            border: 1px solid var(--hair);
+            border-radius: 8px;
+            padding: 7px 30px 7px 11px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            min-width: 160px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5L6 7.5L9 4.5' stroke='%236B635B' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center
+        }
+
+        .ctrl select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-tint)
+        }
+
+        /* Section labels + headline */
+        .seclabel {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--accent);
+            font-weight: 700;
+            margin: 38px 0 10px
+        }
+
+        .headline {
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -.01em;
+            margin: 0 0 4px;
+            max-width: 900px
+        }
+
+        .headline .fig {
+            color: var(--accent)
+        }
+
+        /* KPI row */
+        .kpis {
+            display: grid;
+            grid-template-columns:repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 22px
+        }
+
+        .kpi {
+            background: var(--block);
+            border-radius: 12px;
+            padding: 16px 18px
+        }
+
+        .kpi .lab {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        .kpi .val {
+            font-size: 26px;
+            font-weight: 700;
+            margin-top: 7px;
+            letter-spacing: -.01em
+        }
+
+        .kpi .delta {
+            font-size: 12.5px;
+            margin-top: 6px;
+            color: var(--ink-soft)
+        }
+
+        .delta .up {
+            color: var(--up);
+            font-weight: 600
+        }
+
+        .delta .down {
+            color: var(--down);
+            font-weight: 600
+        }
+
+        /* P&L bar */
+        .pl {
+            margin-top: 8px
+        }
+
+        .plrow {
+            display: grid;
+            grid-template-columns:200px 1fr 120px 120px 92px;
+            align-items: center;
+            gap: 16px;
+            padding: 9px 12px;
+            border-radius: 8px
+        }
+
+        .plrow.struct {
+            background: var(--block)
+        }
+
+        .plrow .name {
+            font-size: 13.5px
+        }
+
+        .plrow.struct .name {
+            font-weight: 700
+        }
+
+        .plrow .name .sub {
+            display: block;
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            font-weight: 400;
+            margin-top: 1px
+        }
+
+        .barwrap {
+            height: 24px;
+            background: var(--accent-tint);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative
+        }
+
+        .bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 6px
+        }
+
+        /* hatch marking the portion already removed above this line (waterfall) */
+        .taken {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            border-radius: 6px;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(45deg, rgba(173, 26, 114, .10) 0 1px, transparent 1px 9px)
+        }
+
+        .col {
+            text-align: right;
+            font-variant-numeric: tabular-nums
+        }
+
+        .col.now {
+            font-weight: 600
+        }
+
+        .col.prior {
+            color: var(--ink-soft);
+            font-size: 12.5px
+        }
+
+        .col.delta {
+            font-size: 12.5px
+        }
+
+        .plhead {
+            display: grid;
+            grid-template-columns:200px 1fr 120px 120px 92px;
+            gap: 16px;
+            padding: 0 12px 6px;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        .plhead .col {
+            text-align: right
+        }
+
+        .rhead {
+            display: grid;
+            grid-template-columns:170px 1fr 120px 120px 84px;
+            gap: 16px;
+            padding: 0 12px 6px;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--ink-soft);
+            font-weight: 600
+        }
+
+        .rhead .col {
+            text-align: right
+        }
+
+        /* Callout */
+        .callout {
+            background: var(--block);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            font-size: 14px;
+            margin: 14px 0 18px
+        }
+
+        .callout .ico {
+            flex: 0 0 auto
+        }
+
+        /* Ranked bars */
+        .ranked {
+            margin-top: 6px
+        }
+
+        .rrow {
+            display: grid;
+            grid-template-columns:170px 1fr 120px 120px 84px;
+            align-items: center;
+            gap: 16px;
+            padding: 7px 12px
+        }
+
+        .rrow .name {
+            font-size: 13.5px;
+            font-weight: 500
+        }
+
+        /* Detail wells */
+        .wells {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 16px;
+            margin-top: 8px
+        }
+
+        .well {
+            background: var(--block);
+            border-radius: 12px;
+            padding: 16px 18px
+        }
+
+        .well h4 {
+            margin: 0 0 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--ink-soft);
+            font-weight: 700
+        }
+
+        .wtable {
+            display: grid;
+            grid-template-columns:1fr auto auto auto;
+            gap: 6px 14px;
+            align-items: baseline
+        }
+
+        .wtable .m {
+            font-size: 13px;
+            color: var(--ink)
+        }
+
+        .wtable .v {
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums
+        }
+
+        .wtable .p {
+            text-align: right;
+            color: var(--ink-soft);
+            font-size: 12.5px;
+            font-variant-numeric: tabular-nums
+        }
+
+        .wtable .d {
+            text-align: right;
+            font-size: 12.5px;
+            font-variant-numeric: tabular-nums
+        }
+
+        .wtable .d .up {
+            color: var(--up);
+            font-weight: 600
+        }
+
+        .wtable .d .down {
+            color: var(--down);
+            font-weight: 600
+        }
+
+        .wtable .colhead {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--ink-soft);
+            font-weight: 600;
+            padding-bottom: 2px
+        }
+
+        /* skeleton */
+        .sk {
+            background: linear-gradient(90deg, #F0EFEB 25%, #F7F6F3 37%, #F0EFEB 63%);
+            background-size: 400% 100%;
+            animation: sh 1.4s ease infinite;
+            border-radius: 6px
+        }
+
+        @keyframes sh {
+            0% {
+                background-position: 100% 0
+            }
+            100% {
+                background-position: -100% 0
+            }
+        }
+
+        .skline {
+            height: 14px;
+            margin: 8px 0
+        }
+
+        .err {
+            background: #FCEEEC;
+            border: 1px solid #F0C9C3;
+            color: #8A2A1E;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 24px;
+            font-size: 13.5px
+        }
+
+        .err code {
+            background: #fff;
+            padding: 1px 5px;
+            border-radius: 4px
+        }
+
+        .hide {
+            display: none !important
+        }
+
+        /* Connect gate */
+        .gate {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px
+        }
+
+        .gatecard {
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            padding: 40px 32px;
+            border: 1px solid var(--hair);
+            border-radius: 16px
+        }
+
+        .gatecard .lockup {
+            justify-content: center;
+            margin-bottom: 22px
+        }
+
+        .gatecard h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px;
+            letter-spacing: -.01em
+        }
+
+        .gatecard p {
+            color: var(--ink-soft);
+            font-size: 14px;
+            margin: 0 0 24px;
+            line-height: 1.5
+        }
+
+        .btn {
+            display: inline-block;
+            font-family: var(--sans);
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 26px;
+            cursor: pointer
+        }
+
+        .btn:hover {
+            background: #97165F
+        }
+
+        .btn:disabled {
+            opacity: .55;
+            cursor: default
+        }
+
+        .gatemsg {
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--down);
+            min-height: 18px
+        }
+
+        @media (max-width: 780px) {
+            .kpis {
+                grid-template-columns:repeat(2, 1fr)
+            }
+
+            .wells {
+                grid-template-columns:1fr
+            }
+
+            .plrow, .plhead {
+                grid-template-columns:130px 1fr 78px;
+            }
+
+            .plrow .col.prior, .plhead .col.prior, .plrow .col.delta, .plhead .col.delta {
+                display: none
+            }
+
+            .rrow, .rhead {
+                grid-template-columns:120px 1fr 80px
+            }
+
+            .rrow .col.prior, .rrow .col.delta, .rhead .col.prior, .rhead .col.delta {
+                display: none
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Connect gate (shown until authenticated) -->
+<div class="gate hide" id="gate">
+    <div class="gatecard">
+        <div class="lockup">
+            <span class="wordmark">Bark</span><span class="spark">✱</span>
+        </div>
+        <h1 id="gateTitle">Connect your Bark account</h1>
+        <p id="gateBody">Sign in with Bark to load this live Profit &amp; Loss dashboard. Your data
+            is fetched directly from Bark each time you open the board.</p>
+        <button class="btn" id="connectBtn">Connect Bark</button>
+        <div class="gatemsg" id="gateMsg"></div>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div class="wrap hide" id="main">
+    <header class="top">
+        <div class="lockup">
+            <span class="wordmark">Bark</span><span class="spark">✱</span>
+            <span class="vrule"></span>
+            <span class="storeblock">
+        <span class="storename" id="storeName">Acme Hats</span>
+        <span class="boardlabel" id="boardLabel">Profit &amp; Loss</span>
+      </span>
+        </div>
+        <div class="stampwrap">
+            <div class="stamp" id="stamp">Data updated …</div>
+            <button class="disconnect" id="disconnectBtn">Disconnect</button>
+        </div>
+    </header>
+
+    <div class="controls">
+        <div class="ctrl">
+            <label for="win">Window</label>
+            <select id="win">
+                <option value="7d">Last 7 days</option>
+                <option value="30d" selected>Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="mtd">Month to date</option>
+                <option value="ytd">Year to date</option>
+            </select>
+        </div>
+        <div class="ctrl">
+            <label for="cmp">Compare</label>
+            <select id="cmp">
+                <option value="none">None</option>
+                <option value="prev">Preceding period</option>
+                <option value="yoy" selected>Same period last year</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="errbox"></div>
+
+    <!-- Headline -->
+    <div class="seclabel">The flow to profit</div>
+    <h1 class="headline" id="headline"><span class="sk skline"
+                                             style="width:60%;height:26px;display:inline-block"></span></h1>
+
+    <!-- KPIs -->
+    <div class="kpis" id="kpis"></div>
+
+    <!-- P&L bar -->
+    <div class="seclabel" style="margin-top:40px">Profit &amp; Loss statement</div>
+    <div class="plhead">
+        <div>Line</div>
+        <div></div>
+        <div class="col now">Now</div>
+        <div class="col prior">Prior</div>
+        <div class="col delta">Δ</div>
+    </div>
+    <div class="pl" id="pl"></div>
+
+    <!-- Category -->
+    <div class="seclabel" style="margin-top:40px">Where the margin comes from</div>
+    <div id="catCallout"></div>
+    <div class="rhead">
+        <div>Category</div>
+        <div></div>
+        <div class="col now">Now</div>
+        <div class="col prior">Prior</div>
+        <div class="col delta">Δ</div>
+    </div>
+    <div class="ranked" id="cat"></div>
+
+    <!-- Detail wells -->
+    <div class="seclabel" style="margin-top:40px">The detail</div>
+    <div class="wells" id="wells"></div>
+</div>
+
+<script>
+  // =========================================================================
+  //  Config
+  // =========================================================================
+  function loadConfig() {
+    try {
+      return JSON.parse(document.getElementById("bark-dashboard-config").textContent);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  const CFG = loadConfig();
+  const STORE_ID = Number(CFG.storeId);
+  const STORE_NAME = CFG.storeName || ("Store " + STORE_ID);
+  const BOARD_NAME = CFG.boardName || "Profit & Loss";
+  const CUR_CODE = CFG.currencyCode || "USD";
+  const TZ = CFG.timezone || undefined;
+
+  // A single human-readable label for this board — reused wherever the deployment
+  // needs to identify itself. Carrying the store name into these strings gives a
+  // clear, at-a-glance purpose for each token and session in Bark's own records.
+  const DASHBOARD_NAME = `${BOARD_NAME} — ${STORE_NAME}`;   // e.g. "Profit & Loss — Acme Hats"
+  // Registered OAuth client name — shown in Bark's connected-apps list, so it must
+  // say what the token is for AND which store it reads.
+  const OAUTH_CLIENT_NAME = `Bark Dashboard · ${DASHBOARD_NAME}`;
+  // A dashboard is one implicit conversation "turn": a new Bark session is minted on
+  // load and every query in that session shares this same turn index.
+  const TURN_IDX = 1;
+
+  // Fixed Bark endpoint for the deployable dashboard. The MCP server is the OAuth
+  // "protected resource"; discovery starts from its well-known metadata.
+  const BARK = {
+    mcpUrl: "https://app.bark-ai.com/mcp",
+    scope: "openid offline_access"
+  };
+
+  // =========================================================================
+  //  OAuth 2.0 (Authorization Code + PKCE + Dynamic Client Registration)
+  //
+  //  A deployed page is a *public* client — no secret. It registers itself with
+  //  Bark's authorization server once (DCR), then runs the PKCE code flow in the
+  //  browser and stores the resulting tokens in localStorage. CORS is open on
+  //  Bark's OAuth + MCP endpoints, so no backend/proxy is needed.
+  // =========================================================================
+  const LS_TOKENS = "bark_oauth_tokens";
+  const SS_PKCE = "bark_pkce";
+  let TOKENS = null;
+
+  // OAuth response params the AS appends on the way back — never part of our own URL.
+  const OAUTH_RESPONSE_PARAMS = ["code", "state", "iss", "session_state", "error", "error_description"];
+
+  function redirectUri() {
+    // The exact URI Bark redirects back to — must match a registered redirect_uri.
+    // We PRESERVE the page's own query string (minus OAuth response params) so hosts
+    // that gate file access on a query token — e.g. JetBrains' built-in server and its
+    // `_ijt` token — still serve the file after the redirect. On a plain static host
+    // there's no query, so this reduces to origin + pathname (unchanged behaviour).
+    const u = new URL(location.href);
+    OAUTH_RESPONSE_PARAMS.forEach(k => u.searchParams.delete(k));
+    const qs = u.searchParams.toString();
+    return u.origin + u.pathname + (qs ? "?" + qs : "");
+  }
+
+  function b64url(bytes) {
+    let s = btoa(String.fromCharCode.apply(null, new Uint8Array(bytes)));
+    return s.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function randB64url(n) {
+    const a = new Uint8Array(n);
+    crypto.getRandomValues(a);
+    return b64url(a);
+  }
+
+  async function sha256b64url(str) {
+    const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return b64url(d);
+  }
+
+  // ---- discovery ----
+  async function fetchJson(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error("HTTP " + r.status + " for " + url);
+    return r.json();
+  }
+
+  async function discoverAS() {
+    // 1. Protected-resource metadata -> authorization server issuer.
+    const ru = new URL(BARK.mcpUrl);
+    const prm = await fetchJson(ru.origin + "/.well-known/oauth-protected-resource" + ru.pathname);
+    const issuer = (prm.authorization_servers && prm.authorization_servers[0]) || ru.origin;
+    // 2. Authorization-server metadata (try RFC 8414 path-aware + OIDC variants).
+    const iu = new URL(issuer);
+    const candidates = [
+      iu.origin + "/.well-known/oauth-authorization-server" + iu.pathname,
+      issuer.replace(/\/$/, "") + "/.well-known/openid-configuration",
+      iu.origin + "/.well-known/openid-configuration" + iu.pathname,
+      iu.origin + "/.well-known/oauth-authorization-server"
+    ];
+    for (const c of candidates) {
+      try {
+        const r = await fetch(c);
+        if (r.ok) return await r.json();
+      } catch (_) {
+      }
+    }
+    throw new Error("Could not discover Bark authorization server metadata.");
+  }
+
+  // ---- dynamic client registration (cached per issuer + redirect_uri) ----
+  async function ensureClient(as) {
+    const key = "bark_oauth_client:" + as.issuer + ":" + redirectUri();
+    let c = null;
+    try {
+      c = JSON.parse(localStorage.getItem(key) || "null");
+    } catch (_) {
+    }
+    if (c && c.client_id) return c;
+    const body = {
+      client_name: OAUTH_CLIENT_NAME,
+      redirect_uris: [redirectUri()],
+      token_endpoint_auth_method: "none",
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      scope: BARK.scope
+    };
+    const r = await fetch(as.registration_endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error("Client registration failed (HTTP " + r.status + ").");
+    c = await r.json();
+    localStorage.setItem(key, JSON.stringify(c));
+    return c;
+  }
+
+  // ---- begin the auth redirect ----
+  async function beginAuth() {
+    const as = await discoverAS();
+    const client = await ensureClient(as);
+    const verifier = randB64url(48);
+    const state = randB64url(16);
+    const challenge = await sha256b64url(verifier);
+    sessionStorage.setItem(SS_PKCE, JSON.stringify({
+      verifier, state, client_id: client.client_id, token_endpoint: as.token_endpoint
+    }));
+    const p = new URLSearchParams({
+      response_type: "code",
+      client_id: client.client_id,
+      redirect_uri: redirectUri(),
+      scope: BARK.scope,
+      state,
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+      resource: BARK.mcpUrl,
+      // OIDC providers only mint a refresh token for `offline_access` when consent
+      // is explicitly prompted — without this the board would re-auth every ~hour.
+      prompt: "consent"
+    });
+    location.assign(as.authorization_endpoint + "?" + p.toString());
+  }
+
+  // ---- handle the redirect back (?code=...&state=...) ----
+  async function handleCallback() {
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code"), state = params.get("state"), err = params.get("error");
+    if (!code && !err) return "none";
+    let saved = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(SS_PKCE) || "null");
+    } catch (_) {
+    }
+    // Clean the URL so a refresh doesn't re-submit the code.
+    history.replaceState({}, document.title, redirectUri());
+    if (err) return {ok: false, msg: "Authorization was declined (" + err + ")."};
+    if (!saved || saved.state !== state) return {ok: false, msg: "Auth state mismatch — please reconnect."};
+    const bodyP = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri(),
+      client_id: saved.client_id,
+      code_verifier: saved.verifier,
+      resource: BARK.mcpUrl
+    });
+    const r = await fetch(saved.token_endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: bodyP.toString()
+    });
+    if (!r.ok) return {ok: false, msg: "Token exchange failed (HTTP " + r.status + ")."};
+    let t = null;
+    try {
+      t = await r.json();
+    } catch (_) {
+    }
+    if (!t || !t.access_token) return {ok: false, msg: "Token endpoint returned no access token."};
+    saveTokens(t, saved);
+    sessionStorage.removeItem(SS_PKCE);
+    return {ok: true};
+  }
+
+  function saveTokens(t, meta) {
+    TOKENS = {
+      access_token: t.access_token,
+      refresh_token: t.refresh_token || (meta && meta.refresh_token) || (TOKENS && TOKENS.refresh_token) || null,
+      token_endpoint: (meta && meta.token_endpoint) || (TOKENS && TOKENS.token_endpoint),
+      client_id: (meta && meta.client_id) || (TOKENS && TOKENS.client_id),
+      // refresh 60s before the real expiry to avoid edge-of-expiry 401s
+      expires_at: Date.now() + ((t.expires_in || 3600) * 1000) - 60000
+    };
+    localStorage.setItem(LS_TOKENS, JSON.stringify(TOKENS));
+  }
+
+  function loadTokens() {
+    try {
+      TOKENS = JSON.parse(localStorage.getItem(LS_TOKENS) || "null");
+    } catch (_) {
+      TOKENS = null;
+    }
+  }
+
+  async function refreshTokens() {
+    if (!TOKENS || !TOKENS.refresh_token) throw new Error("not-authenticated");
+    const bodyP = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: TOKENS.refresh_token,
+      client_id: TOKENS.client_id,
+      resource: BARK.mcpUrl,
+      scope: BARK.scope
+    });
+    const r = await fetch(TOKENS.token_endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: bodyP.toString()
+    });
+    if (!r.ok) {
+      disconnect();
+      throw new Error("session-expired");
+    }
+    saveTokens(await r.json(), TOKENS);
+  }
+
+  async function accessToken() {
+    if (!TOKENS) throw new Error("not-authenticated");
+    if (Date.now() >= TOKENS.expires_at) await refreshTokens();
+    return TOKENS.access_token;
+  }
+
+  function isAuthed() {
+    return !!(TOKENS && (TOKENS.access_token || TOKENS.refresh_token));
+  }
+
+  function disconnect() {
+    TOKENS = null;
+    localStorage.removeItem(LS_TOKENS);
+    MCP.sessionId = null;
+    MCP.protocol = null;
+    MCP.initialized = false;
+    mcpInitPromise = null;
+    BARK_SESSION = null;
+    sessionPromise = null;
+  }
+
+  // =========================================================================
+  //  MCP client (Streamable HTTP transport)
+  //
+  //  We speak the MCP
+  //  JSON-RPC protocol to https://app.bark-ai.com/mcp ourselves —
+  //  initialize -> notifications/initialized -> tools/call — carrying the
+  //  bearer token and the Mcp-Session-Id the server hands back.
+  // =========================================================================
+  const MCP = {sessionId: null, protocol: null, initialized: false, rpcId: 0};
+
+  async function mcpPost(bodyObj) {
+    const headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
+      "Authorization": "Bearer " + (await accessToken())
+    };
+    if (MCP.protocol) headers["MCP-Protocol-Version"] = MCP.protocol;
+    if (MCP.sessionId) headers["Mcp-Session-Id"] = MCP.sessionId;
+    return fetch(BARK.mcpUrl, {method: "POST", headers, body: JSON.stringify(bodyObj)});
+  }
+
+  // Parse a Streamable-HTTP response: JSON or an SSE stream of JSON-RPC frames.
+  async function parseMcp(res, wantId) {
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const text = await res.text();
+    if (!text) return null;
+    let msgs;
+    if (ct.indexOf("text/event-stream") >= 0) {
+      msgs = [];
+      for (const chunk of text.split(/\n\n/)) {
+        const data = chunk.split(/\n/).filter(l => l.indexOf("data:") === 0)
+          .map(l => l.slice(5).trim()).join("\n");
+        if (!data) continue;
+        try {
+          msgs.push(JSON.parse(data));
+        } catch (_) {
+        }
+      }
+    } else {
+      let j;
+      try {
+        j = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Unexpected non-JSON MCP payload: " + text.slice(0, 200));
+      }
+      msgs = Array.isArray(j) ? j : [j];
+    }
+    if (wantId != null) {
+      const m = msgs.find(x => x && x.id === wantId);
+      if (m) return m;
+    }
+    return msgs.find(x => x && (x.result !== undefined || x.error !== undefined)) || msgs[0] || null;
+  }
+
+  async function rpc(method, params, isNotification) {
+    const body = isNotification
+      ? {jsonrpc: "2.0", method, params}
+      : {jsonrpc: "2.0", id: ++MCP.rpcId, method, params};
+    let res = await mcpPost(body);
+    if (res.status === 401) {
+      // Either the token expired mid-flight, or a freshly-minted JWT hit brief
+      // clock skew. Refresh if we can; otherwise retry once as-is before giving up.
+      if (TOKENS && TOKENS.refresh_token) await refreshTokens();
+      res = await mcpPost(body);
+      if (res.status === 401) {
+        disconnect();
+        throw new Error("session-expired");
+      }
+    }
+    const sid = res.headers.get("mcp-session-id");
+    if (sid) MCP.sessionId = sid;
+    if (res.status === 202) return null;          // notification accepted, no body
+    const msg = await parseMcp(res, body.id);
+    if (!res.ok && !msg) throw new Error("MCP transport error (HTTP " + res.status + ").");
+    if (msg && msg.error) throw new Error(msg.error.message || "MCP error");
+    return msg ? msg.result : null;
+  }
+
+  // Memoised so concurrent callBark()s (Promise.all) share ONE initialize handshake
+  // instead of racing two. Cleared on disconnect so a fresh load re-initializes.
+  let mcpInitPromise = null;
+
+  function ensureMcp() {
+    if (MCP.initialized) return Promise.resolve();
+    if (mcpInitPromise) return mcpInitPromise;
+    mcpInitPromise = (async () => {
+      MCP.protocol = null;
+      MCP.sessionId = null;
+      const result = await rpc("initialize", {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: {name: `Bark Deployable Dashboard · ${DASHBOARD_NAME}`, version: "1.0"}
+      }, false);
+      MCP.protocol = (result && result.protocolVersion) || "2025-06-18";
+      await rpc("notifications/initialized", {}, true);
+      MCP.initialized = true;
+    })().catch(e => {
+      mcpInitPromise = null;   // let a later call retry from scratch
+      throw e;
+    });
+    return mcpInitPromise;
+  }
+
+  // Same contract the render layer expects from the old bridge: returns the
+  // tool's parsed JSON payload, throws on tool/transport error.
+  async function callBark(name, args) {
+    await ensureMcp();
+    const result = await rpc("tools/call", {name, arguments: args}, false);
+    if (!result) throw new Error("Empty MCP result for " + name);
+    if (result.isError) {
+      const c = result.content && result.content[0];
+      throw new Error((c && c.text) ? c.text : "Unknown MCP tool error");
+    }
+    if (result.structuredContent && Object.keys(result.structuredContent).length) {
+      return result.structuredContent;
+    }
+    const blocks = result.content || [];
+    for (const b of blocks) {
+      if (b && b.type === "text") {
+        try {
+          return JSON.parse(b.text);
+        } catch (_) {
+        }
+      }
+    }
+    throw new Error("Unexpected non-JSON tool payload from " + name);
+  }
+
+  // =========================================================================
+  //  Bark session + query helpers
+  // =========================================================================
+  let BARK_SESSION = null;
+  let sessionPromise = null;   // memoised so parallel first-calls mint ONE session
+
+  async function mintSession() {
+    const res = await callBark("bark_start_session", {});
+    let sid = res && res.sessionId;
+    if (!sid && res && Array.isArray(res.content)) {
+      for (const b of res.content) {
+        try {
+          const j = JSON.parse(b.text);
+          if (j && j.sessionId) {
+            sid = j.sessionId;
+            break;
+          }
+        } catch (_) {
+        }
+      }
+    }
+    if (!sid) throw new Error("Could not obtain a Bark session id.");
+    return sid;
+  }
+
+  function getSession(force) {
+    if (force) {
+      sessionPromise = null;   // drop a stale session so we re-mint from scratch
+      BARK_SESSION = null;
+    }
+    if (BARK_SESSION) return Promise.resolve(BARK_SESSION);
+    if (!sessionPromise) {
+      sessionPromise = mintSession()
+        .then(sid => {
+          BARK_SESSION = sid;
+          return sid;
+        })
+        .catch(e => {
+          sessionPromise = null;   // allow a retry on the next call
+          throw e;
+        });
+    }
+    return sessionPromise;
+  }
+
+  const ANN = () => ({
+    sessionId: BARK_SESSION,
+    activeTurn: {
+      idx: TURN_IDX,
+      user: `Open the "${DASHBOARD_NAME}" dashboard`,
+      context: `Deployable "${DASHBOARD_NAME}" dashboard (store #${STORE_ID}) re-querying Bark live on open and on every Window / Compare change.`
+    }
+  });
+
+  const WIN = {
+    "7d": {from: "now-7d/d", to: "now/d-1s"},
+    "30d": {from: "now-30d/d", to: "now/d-1s"},
+    "90d": {from: "now-90d/d", to: "now/d-1s"},
+    "mtd": {from: "now/M", to: "now/d-1s"},
+    "ytd": {from: "now/y", to: "now/d-1s"},
+  };
+
+  function dateSpec(winKey, cmpKey) {
+    const p = WIN[winKey];
+    if (cmpKey === "none") return {from: p.from, to: p.to};
+    const fn = cmpKey === "yoy" ? "PREVIOUS_YEAR_PERIOD_MATCHING_WEEKDAYS" : "PRECEDING_PERIOD_MATCHING_WEEKDAYS";
+    return {
+      primary: {from: p.from, to: p.to},
+      secondary: {from: `${fn}_FROM(${p.from}, ${p.to})`, to: `${fn}_TO(${p.from}, ${p.to})`}
+    };
+  }
+
+  function currencySymbol(code) {
+    try {
+      const p = new Intl.NumberFormat("en", {
+        style: "currency", currency: code, maximumFractionDigits: 0
+      }).formatToParts(0);
+      const c = p.find(x => x.type === "currency");
+      return c ? c.value : (code + " ");
+    } catch (e) {
+      return "$";
+    }
+  }
+
+  const CUR_SYMBOL = currencySymbol(CUR_CODE);
+
+  // ---- response helpers ----
+  function colMap(cols) {
+    const m = {};
+    cols.forEach((c, i) => m[c] = i);
+    return m;
+  }
+
+  function isCompare(cols) {
+    return cols.some(c => c.endsWith(".primary"));
+  }
+
+  function num(x) {
+    if (x === null || x === undefined || x === "") return null;
+    const n = Number(x);
+    return isNaN(n) ? null : n;
+  }
+
+  function read(key, cols, cm, row) {
+    if (isCompare(cols)) {
+      return {
+        now: num(row[cm[key + ".primary"]]),
+        prior: num(row[cm[key + ".secondary"]]),
+        changePct: num(row[cm[key + ".changePercent"]])
+      };
+    }
+    return {now: num(row[cm[key]]), prior: null, changePct: null};
+  }
+
+  // ---- formatting ----
+  function fmtCur(v, compact) {
+    if (v === null) return "—";
+    const a = Math.abs(v), sign = v < 0 ? "-" : "", S = CUR_SYMBOL;
+    if (compact) {
+      if (a >= 1e6) return sign + S + (a / 1e6).toFixed(2) + "M";
+      if (a >= 1e3) return sign + S + (a / 1e3).toFixed(1) + "K";
+      return sign + S + a.toFixed(0);
+    }
+    return sign + S + a.toLocaleString("en-US", {maximumFractionDigits: 0});
+  }
+
+  function fmtPct(v) {
+    if (v === null) return "—";
+    return (v * 100).toFixed(1) + "%";
+  }
+
+  function fmtDec(v) {
+    if (v === null) return "—";
+    return v.toFixed(2);
+  }
+
+  function fmtInt(v) {
+    if (v === null) return "—";
+    return Math.round(v).toLocaleString("en-US");
+  }
+
+  function fmtBy(format, v, compact) {
+    if (format === "currency") return fmtCur(v, compact);
+    if (format === "percent") return fmtPct(v);
+    if (format === "integer") return fmtInt(v);
+    if (format === "decimal") return fmtDec(v);
+    return v === null ? "—" : String(v);
+  }
+
+  function deltaHTML(changePct, goodWhenDown) {
+    if (changePct === null || changePct === undefined) return "";
+    const up = changePct >= 0;
+    const good = goodWhenDown ? !up : up;
+    const arrow = up ? "▲" : "▼";
+    const cls = good ? "up" : "down";
+    return `<span class="${cls}">${arrow} ${Math.abs(changePct * 100).toFixed(1)}%</span>`;
+  }
+
+  function setStamp() {
+    const d = new Date();
+    const opts = {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"};
+    if (TZ) opts.timeZone = TZ;
+    document.getElementById("stamp").textContent =
+      "Data updated " + d.toLocaleString("en-US", opts);
+  }
+
+  // skeleton
+  function showSkeleton() {
+    document.getElementById("headline").innerHTML =
+      '<span class="sk skline" style="width:55%;height:26px;display:inline-block"></span>';
+    let k = "";
+    for (let i = 0; i < 4; i++) k += '<div class="kpi"><div class="sk skline" style="width:50%"></div><div class="sk skline" style="height:24px;width:70%;margin-top:10px"></div><div class="sk skline" style="width:40%"></div></div>';
+    document.getElementById("kpis").innerHTML = k;
+    const numsk = '<div class="col now"><span class="sk skline" style="display:inline-block;height:14px;width:72%"></span></div>' +
+      '<div class="col prior"><span class="sk skline" style="display:inline-block;height:14px;width:60%"></span></div>' +
+      '<div class="col delta"><span class="sk skline" style="display:inline-block;height:14px;width:50%"></span></div>';
+    let p = "";
+    for (let i = 0; i < 9; i++) p += '<div class="plrow"><div class="sk skline" style="width:80%"></div><div class="sk skline" style="height:24px"></div>' + numsk + '</div>';
+    document.getElementById("pl").innerHTML = p;
+    let c = "";
+    for (let i = 0; i < 8; i++) c += '<div class="rrow"><div class="sk skline" style="width:70%"></div><div class="sk skline" style="height:24px"></div>' + numsk + '</div>';
+    document.getElementById("cat").innerHTML = c;
+    document.getElementById("catCallout").innerHTML = "";
+    let w = "";
+    for (let i = 0; i < 6; i++) w += '<div class="well"><div class="sk skline" style="width:40%"></div><div class="sk skline"></div><div class="sk skline"></div><div class="sk skline"></div></div>';
+    document.getElementById("wells").innerHTML = w;
+  }
+
+  function showError(msg) {
+    document.getElementById("errbox").innerHTML =
+      `<div class="err"><strong>Couldn't load Bark data.</strong><br>${String(msg).replace(/</g, "&lt;")}</div>`;
+  }
+
+  function clearError() {
+    document.getElementById("errbox").innerHTML = "";
+  }
+
+  // ---- main render ----
+  async function render() {
+    clearError();
+    showSkeleton();
+    const winKey = document.getElementById("win").value;
+    const cmpKey = document.getElementById("cmp").value;
+    const date = dateSpec(winKey, cmpKey);
+
+    const plMeasures = [
+      "sales.grossSalesAmount", "sales.discountsAmount", "sales.returnsAmount", "sales.netSalesAmount",
+      "sales.cogsAmount", "sales.totalSupplyChainCostAmount", "sales.totalPaymentCostAmount",
+      "derivatives.mediaCostAmount", "derivatives.contributionMarginAmount", "derivatives.contributionMarginPercentage",
+      "derivatives.mediaCostPercentage", "sales.grossProfitAmount", "sales.grossProfitPercentage", "sales.cogsPercentage",
+      "sales.ordersCount", "sales.avgOrderValue", "sales.avgItemsCountPerOrder", "sales.avgEffectivePrice",
+      "sales.netSalesQuantity", "sales.discountsPercentage", "sales.returnsAmountPercentage",
+      "sales.totalSupplyChainCostPercentage", "sales.totalPaymentCostPercentage",
+      "derivatives.profitOnAdSpend", "derivatives.revenueOnAdSpend", "derivatives.contributionMarginAmountPerView",
+      "traffic.viewsCount", "derivatives.viewsConversionRate",
+      "sales.grossSalesQuantity", "sales.returnsQuantity", "sales.pricingDiscountsAmount", "sales.pricingDiscountsPercentage",
+      "sales.avgOriginalPrice", "sales.avgCostPerUnit"
+    ].map(k => ({key: k}));
+
+    const catQuery = (date) => ({
+      subject: {type: "store", storeId: STORE_ID},
+      query: {
+        date, dimensions: [{key: "products.category"}],
+        measures: [{key: "sales.netSalesAmount"}, {key: "derivatives.contributionMarginAmount"}, {key: "derivatives.contributionMarginPercentage"}],
+        where: [{
+          key: "products.category",
+          operator: "excludes",
+          value: ["Gift Card", "Bundle", "Insurance", "Donation", "unknown"]
+        }],
+        order: [{key: "derivatives.contributionMarginAmount", direction: "desc"}], totals: true
+      }, _annotations: ANN()
+    });
+    const plQuery = (date) => ({
+      subject: {type: "store", storeId: STORE_ID},
+      query: {date, measures: plMeasures, totals: true}, _annotations: ANN()
+    });
+
+    try {
+      await getSession();
+      let plRes, catRes;
+      try {
+        [plRes, catRes] = await Promise.all([
+          callBark("bark_get_store_analytics", plQuery(date)),
+          callBark("bark_get_store_analytics", catQuery(date))
+        ]);
+      } catch (e) {
+        // session may be stale on reopen — re-mint once and retry
+        await getSession(true);
+        [plRes, catRes] = await Promise.all([
+          callBark("bark_get_store_analytics", plQuery(date)),
+          callBark("bark_get_store_analytics", catQuery(date))
+        ]);
+      }
+      paint(plRes, catRes, cmpKey !== "none");
+      setStamp();
+    } catch (e) {
+      if (String(e.message) === "not-authenticated" || String(e.message) === "session-expired") {
+        showGate("Your Bark session expired — please reconnect.");
+        return;
+      }
+      showError(e.message || String(e));
+    }
+  }
+
+  function paint(plRes, catRes, compare) {
+    const d = plRes && plRes.data;
+    if (!d || !Array.isArray(d.columns) || !Array.isArray(d.totals)) {
+      throw new Error("Malformed analytics response (missing columns/totals).");
+    }
+    const cols = d.columns, cm = colMap(cols);
+    const row = d.totals;
+    const M = {};
+    (Array.isArray(plRes.members) ? plRes.members : []).forEach(m => M[m.key] = m);
+    const get = k => read(k, cols, cm, row);
+
+    const gross = get("sales.grossSalesAmount");
+    const disc = get("sales.discountsAmount");
+    const ret = get("sales.returnsAmount");
+    const net = get("sales.netSalesAmount");
+    const cogs = get("sales.cogsAmount");
+    const ful = get("sales.totalSupplyChainCostAmount");
+    const pay = get("sales.totalPaymentCostAmount");
+    const media = get("derivatives.mediaCostAmount");
+    const cmAmt = get("derivatives.contributionMarginAmount");
+    const cmPct = get("derivatives.contributionMarginPercentage");
+    const mediaPct = get("derivatives.mediaCostPercentage");
+
+    // Headline
+    document.getElementById("headline").innerHTML =
+      `From <span class="fig">${fmtCur(net.now, true)}</span> in net sales to ` +
+      `<span class="fig">${fmtCur(cmAmt.now, true)}</span> in contribution margin` +
+      (cmPct.now !== null ? ` (${fmtPct(cmPct.now)})` : "");
+
+    // KPIs
+    const kpi = (lab, valStr, d) => `<div class="kpi"><div class="lab">${lab}</div>` +
+      `<div class="val tnum">${valStr}</div>` +
+      `<div class="delta">${d}</div></div>`;
+    const kdelta = (g, prior, goodWhenDown) => compare && g.changePct !== null
+      ? `${deltaHTML(g.changePct, goodWhenDown)} · from ${prior}` : "&nbsp;";
+    document.getElementById("kpis").innerHTML =
+      kpi("Net Sales", fmtCur(net.now, true), kdelta(net, fmtCur(net.prior, true), false)) +
+      kpi("Contribution Margin", fmtCur(cmAmt.now, true), kdelta(cmAmt, fmtCur(cmAmt.prior, true), false)) +
+      kpi("Contribution Margin %", fmtPct(cmPct.now), kdelta(cmPct, fmtPct(cmPct.prior), false)) +
+      kpi("Media % of Net", fmtPct(mediaPct.now), kdelta(mediaPct, fmtPct(mediaPct.prior), true));
+
+    // P&L bar
+    const base = Math.max(Math.abs(gross.now || 0), 1);
+    const plRows = [
+      {name: "Gross Sales", sub: "product revenue", g: gross, struct: true, sign: "", good: false},
+      {name: "Discounts", sub: "promo codes", g: disc, struct: false, sign: "−", good: true},
+      {name: "Returns", sub: "refunded items", g: ret, struct: false, sign: "−", good: true},
+      {name: "Net Sales", sub: "recognized revenue", g: net, struct: true, sign: "", good: false},
+      {name: "COGS", sub: pctOf(cogs.now, net.now) + " of net", g: cogs, struct: false, sign: "−", good: true},
+      {name: "Fulfillment", sub: pctOf(ful.now, net.now) + " of net", g: ful, struct: false, sign: "−", good: true},
+      {name: "Payments", sub: pctOf(pay.now, net.now) + " of net", g: pay, struct: false, sign: "−", good: true},
+      {
+        name: "Media",
+        sub: (mediaPct.now !== null ? fmtPct(mediaPct.now) + " of net" : "ad spend"),
+        g: media,
+        struct: false,
+        sign: "−",
+        good: true
+      },
+      {
+        name: "Contribution Margin",
+        sub: (cmPct.now !== null ? fmtPct(cmPct.now) + " of net" : "operational profit"),
+        g: cmAmt,
+        struct: true,
+        sign: "",
+        good: false
+      },
+    ];
+    // Waterfall geometry: structural rows are full bars from the left; deduction
+    // rows float at the right edge of the running total and staircase down.
+    let running = Math.abs(gross.now || 0);
+    plRows.forEach(r => {
+      const v = Math.abs(r.g.now || 0);
+      if (r.struct) {
+        r.off = 0;
+        r.w = Math.min(100, v / base * 100);
+        running = v;
+      } else {
+        const start = Math.max(0, running - v);
+        r.off = start / base * 100;
+        r.w = Math.min(100 - r.off, v / base * 100);
+        running = start;
+      }
+    });
+    document.getElementById("pl").innerHTML = plRows.map(r => {
+      const prior = compare ? fmtCur(r.g.prior, true) : "";
+      const delta = compare ? deltaHTML(r.g.changePct, r.good) : "";
+      const takenLeft = r.off + r.w;
+      const takenW = Math.max(0, 100 - takenLeft);
+      const taken = takenW > 0.3 ? `<div class="taken" style="left:${takenLeft}%;width:${takenW}%"></div>` : "";
+      return `<div class="plrow ${r.struct ? 'struct' : ''}">` +
+        `<div class="name">${r.sign ? r.sign + " " : ""}${r.name}<span class="sub">${r.sub}</span></div>` +
+        `<div class="barwrap">${taken}<div class="bar" style="margin-left:${r.off}%;width:${r.w}%"></div></div>` +
+        `<div class="col now">${fmtCur(r.g.now, true)}</div>` +
+        `<div class="col prior">${prior}</div>` +
+        `<div class="col delta">${delta}</div></div>`;
+    }).join("");
+
+    // Category ranked bars (CM by category)
+    paintCategory(catRes, compare);
+
+    // Detail wells
+    const LABELS = {
+      "derivatives.revenueOnAdSpend": "ROAS",
+      "derivatives.profitOnAdSpend": "POAS",
+      "derivatives.contributionMarginAmount": "CM",
+      "derivatives.contributionMarginPercentage": "% CM"
+    };
+    const W = (k, goodWhenDown) => {
+      const g = get(k), f = (M[k] && M[k].format) || "currency", title = LABELS[k] || (M[k] && M[k].title) || k;
+      const prior = compare ? fmtBy(f, g.prior, false) : "";
+      const delta = compare ? deltaHTML(g.changePct, !!goodWhenDown) : "";
+      return `<div class="m">${title}</div><div class="v tnum">${fmtBy(f, g.now, false)}</div>` +
+        `<div class="p tnum">${prior}</div><div class="d tnum">${delta}</div>`;
+    };
+    const head = `<div class="m colhead"></div><div class="v colhead">Now</div><div class="p colhead">${compare ? 'Prior' : ''}</div><div class="d colhead">${compare ? 'Δ' : ''}</div>`;
+    const wellHTML = (title, rows) => `<div class="well"><h4>${title}</h4><div class="wtable">${head}${rows}</div></div>`;
+    document.getElementById("wells").innerHTML =
+      wellHTML("Sales",
+        W("sales.grossSalesAmount") + W("sales.netSalesAmount") +
+        W("sales.grossSalesQuantity") + W("sales.netSalesQuantity") +
+        W("sales.ordersCount") + W("sales.avgOrderValue") + W("sales.avgItemsCountPerOrder")) +
+      wellHTML("Discounts &amp; markdowns",
+        W("sales.discountsAmount", true) + W("sales.discountsPercentage", true) +
+        W("sales.pricingDiscountsAmount", true) + W("sales.pricingDiscountsPercentage", true) +
+        W("sales.returnsAmount", true) + W("sales.returnsAmountPercentage", true) + W("sales.returnsQuantity", true)) +
+      wellHTML("Pricing",
+        W("sales.avgOriginalPrice") + W("sales.avgEffectivePrice") + W("sales.avgCostPerUnit", true)) +
+      wellHTML("Margin &amp; profit",
+        W("sales.cogsAmount", true) + W("sales.cogsPercentage", true) + W("sales.grossProfitAmount") + W("sales.grossProfitPercentage") +
+        W("derivatives.contributionMarginAmount") + W("derivatives.contributionMarginPercentage")) +
+      wellHTML("Fulfillment &amp; payments",
+        W("sales.totalSupplyChainCostAmount", true) + W("sales.totalSupplyChainCostPercentage", true) +
+        W("sales.totalPaymentCostAmount", true) + W("sales.totalPaymentCostPercentage", true)) +
+      wellHTML("Media &amp; traffic",
+        W("derivatives.mediaCostAmount", true) + W("derivatives.mediaCostPercentage", true) + W("derivatives.revenueOnAdSpend") +
+        W("derivatives.profitOnAdSpend") + W("traffic.viewsCount") + W("derivatives.viewsConversionRate"));
+  }
+
+  function pctOf(part, whole) {
+    if (part === null || whole === null || !whole) return "";
+    return (part / whole * 100).toFixed(1) + "%";
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function paintCategory(catRes, compare) {
+    // Degrade gracefully: a missing/malformed category response must not blank the
+    // whole board — just leave the category section empty.
+    const d = catRes && catRes.data;
+    if (!d || !Array.isArray(d.columns) || !Array.isArray(d.rows)) {
+      document.getElementById("catCallout").innerHTML = "";
+      document.getElementById("cat").innerHTML =
+        '<div class="rrow"><div class="name" style="color:var(--ink-soft)">No category data for this period.</div></div>';
+      return;
+    }
+    const cols = d.columns, cm = colMap(cols);
+    const catIdx = cm["products.category"];
+    const cmpMode = isCompare(cols);
+    const cmNow = cmpMode ? cm["derivatives.contributionMarginAmount.primary"] : cm["derivatives.contributionMarginAmount"];
+    const cmPri = cmpMode ? cm["derivatives.contributionMarginAmount.secondary"] : null;
+    const cmChg = cmpMode ? cm["derivatives.contributionMarginAmount.changePercent"] : null;
+    const netNow = cmpMode ? cm["sales.netSalesAmount.primary"] : cm["sales.netSalesAmount"];
+    const pctNow = cmpMode ? cm["derivatives.contributionMarginPercentage.primary"] : cm["derivatives.contributionMarginPercentage"];
+
+    let rows = d.rows
+      .filter(r => r[catIdx] !== null && num(r[cmNow]) !== null)
+      .map(r => ({
+        cat: r[catIdx], cm: num(r[cmNow]), prior: cmPri !== null ? num(r[cmPri]) : null,
+        chg: cmChg !== null ? num(r[cmChg]) : null, net: num(r[netNow]), pct: num(r[pctNow])
+      }))
+      .filter(r => r.cm > 0)
+      .sort((a, b) => b.cm - a.cm);
+
+    const totalsRow = Array.isArray(d.totals) ? d.totals : [];
+    const totalCM = num(totalsRow[cmNow]) || rows.reduce((s, r) => s + r.cm, 0);
+    const top = rows.slice(0, 8);
+    const base = Math.max.apply(null, top.map(r => r.cm).concat([1]));
+
+    if (top.length) {
+      const lead = top[0];
+      const share = totalCM ? (lead.cm / totalCM * 100) : null;
+      if (share !== null) {
+        document.getElementById("catCallout").innerHTML =
+          `<div class="callout"><span class="ico">💡</span><div><strong>${escapeHtml(lead.cat)}</strong> carries about ` +
+          `<strong>${share.toFixed(0)}%</strong> of contribution margin (${fmtCur(lead.cm, true)} of ${fmtCur(totalCM, true)})` +
+          ` at ${fmtPct(lead.pct)} CM — protect its stock and visibility.</div></div>`;
+      }
+    }
+
+    document.getElementById("cat").innerHTML = top.map(r => {
+      const w = Math.min(100, r.cm / base * 100);
+      const prior = compare ? fmtCur(r.prior, true) : "";
+      const delta = compare ? deltaHTML(r.chg, false) : "";
+      return `<div class="rrow"><div class="name">${escapeHtml(r.cat)}</div>` +
+        `<div class="barwrap"><div class="bar" style="width:${w}%"></div></div>` +
+        `<div class="col now">${fmtCur(r.cm, true)}</div>` +
+        `<div class="col prior">${prior}</div>` +
+        `<div class="col delta">${delta}</div></div>`;
+    }).join("");
+  }
+
+  // =========================================================================
+  //  Boot + gate wiring
+  // =========================================================================
+  function showMain() {
+    document.getElementById("gate").classList.add("hide");
+    document.getElementById("main").classList.remove("hide");
+    document.getElementById("storeName").textContent = STORE_NAME;
+    document.getElementById("boardLabel").textContent = BOARD_NAME;
+    document.title = `Bark · ${STORE_NAME} — ${BOARD_NAME}`;
+  }
+
+  function showGate(msg) {
+    document.getElementById("main").classList.add("hide");
+    document.getElementById("gate").classList.remove("hide");
+    const btn = document.getElementById("connectBtn");
+    btn.disabled = false;
+    btn.textContent = "Connect Bark";
+    document.getElementById("gateMsg").textContent = msg || "";
+  }
+
+  document.getElementById("connectBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("connectBtn");
+    btn.disabled = true;
+    btn.textContent = "Connecting…";
+    document.getElementById("gateMsg").textContent = "";
+    try {
+      await beginAuth();  // redirects away on success
+    } catch (e) {
+      showGate(e.message || String(e));
+    }
+  });
+
+  document.getElementById("disconnectBtn").addEventListener("click", () => {
+    disconnect();
+    showGate("");
+  });
+
+  document.getElementById("win").addEventListener("change", render);
+  document.getElementById("cmp").addEventListener("change", render);
+
+  async function boot() {
+    if (!(window.crypto && window.crypto.subtle)) {
+      showGate("This dashboard must be served over HTTPS (or http://localhost) for secure sign-in.");
+      return;
+    }
+    loadTokens();
+    const cb = await handleCallback();
+    if (cb !== "none") {
+      if (!cb.ok) {
+        showGate(cb.msg);
+        return;
+      }
+    }
+    if (isAuthed()) {
+      showMain();
+      render();
+    } else {
+      showGate("");
+    }
+  }
+
+  boot();
+</script>
+</body>
+</html>

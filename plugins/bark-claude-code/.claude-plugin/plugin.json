@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "bark-claude-code",
+  "version": "0.0.1",
+  "description": "The Bark AI toolkit for Claude Code — connect your store's Bark data and build live, deployable dashboards you host yourself on any static web host.",
+  "author": {
+    "name": "Bark AI",
+    "url": "https://bark-ai.com"
+  }
+}

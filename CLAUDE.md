@@ -38,8 +38,9 @@ An exploratory **Bun + React (json-render)** renderer — a possible v1 directio
 
 - **Versioning:** stay in `0.0.x` — **patch bumps only**, no minor. Bump **only the plugin you changed**
   (`plugins/<plugin>/.claude-plugin/plugin.json` + the matching `plugins[].version` in
-  `marketplace.json`, kept equal); the two plugins version independently. Leave marketplace
-  `metadata.version` alone. **Always bump in a separate commit** from the change it versions.
+  `marketplace.json`, kept equal); the two plugins version independently. Bump marketplace
+  `metadata.version` only when the **catalog** changes (a plugin added or removed), not for a plugin's
+  own content bump. **Always bump in a separate commit** from the change it versions.
 - **Updates** reach clients via **auto-sync** (must be enabled); bumping the plugin version is what a
   client picks up.
 - **Commits:** Conventional Commits. End each message with:

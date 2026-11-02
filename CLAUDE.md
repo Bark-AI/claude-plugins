@@ -22,7 +22,7 @@ source** — proprietary, source-available so Bark customers can install the plu
 - `plugins/bark-claude-code/skills/bark-standalone-dashboard/` — `SKILL.md` (how to build a live,
   **deployable** dashboard: a self-contained HTML page that does its own OAuth + MCP), `reference/`
   (auth+RPC, query, design docs), and `examples/` (three ready deployable boards).
-- `.github/workflows/validate.yml` — CI runs `claude plugin validate .` on Node 24.
+- `.github/workflows/validate.yml` — CI runs `claude plugin validate .` on Node 26.
 
 An exploratory **Bun + React (json-render)** renderer — a possible v1 direction — lives on the
 **`v1-alpha`** branch, not `main`.
